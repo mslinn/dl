@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import re
 import sys
@@ -5,7 +7,8 @@ import yt_dlp
 
 format = 'mp3'
 if len(sys.argv)==1:
-    URL = 'https://www.youtube.com/watch?v=BaW_jenozKc'
+    print("Error: No URL was provided.")
+    sys.exit(2)
 else:
     URL = sys.argv[1]
 
