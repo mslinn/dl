@@ -1,0 +1,13 @@
+*.swp
+.idea*
+*.iml
+*.tmp
+*~
+~*
+.DS_Store
+.idea
+__pycache__/
+__MACOSX
+test.*
+*.m4a
+*.mp3
