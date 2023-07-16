@@ -27,6 +27,7 @@ Uses `scp` to copy downloaded media to other computers that run `sshd`.
    ```
 
 5. Copy `dl.config` to your home directory and modify to suit.
+   The file is in [YAML](https://yaml.org/) format.
    Here is a typical `dl.config`:
 
    ```yaml
