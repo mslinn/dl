@@ -28,8 +28,8 @@ def parse_args():
     parser = argparse.ArgumentParser(prog='dl', description='Downloads media', epilog="Last modified 2023-07-16")
     parser.add_argument('url')
     parser.add_argument('-d', '--debug', action='store_true', help="Enable debug mode")
-    parser.add_argument('-v', '--keep-video', action='store_true', help=f"Download video to {VDEST}")
-    parser.add_argument('-x', '--xrated', action='store_true', help=f"Download video to {XDEST}")
+    parser.add_argument('-v', '--keep-video', action='store_true', help=f"Download video to {vdest}")
+    parser.add_argument('-x', '--xrated', action='store_true', help=f"Download video to {xdest}")
     parser.add_argument('-V', '--video_dest', help=f"download video to the specified directory")
     args = parser.parse_args()
 
@@ -37,10 +37,7 @@ def parse_args():
     format = 'mp3'
     if args.keep_video or args.video_dest or args.xrated:
         action = 'video'
-        dl_options = '--keep-video'
         format = 'mp4'
-    if args.xrated and 'pornhub.com' in args.url:
-        dl_options += ' -ss 3'
     return args
 
 def run(cmd):
@@ -49,65 +46,73 @@ def run(cmd):
             print(p.stdout.read1().decode('utf-8'), end="")
             sleep(0.1)
 
-def set_MP3_DEST():
-    global MP3_DEST
-    CLIP_JAM = '/media/mslinn/Clip Jam/Music/playlist'
-    if os.path.isdir(CLIP_JAM):
-        MP3_DEST = CLIP_JAM
+def set_mp3_dest():
+    global mp3_dest
+    clip_jam = '/media/mslinn/Clip Jam/Music/playlist'
+    if os.path.isdir(clip_jam):
+        mp3_dest = clip_jam
     elif environ.get('mp3s') is not None:
-        MP3_DEST = environ.get('mp3s')
-        if not os.path.isdir(MP3_DEST):
-            os.abort(f"mp3s environment variable points to {MP3_DEST}, but that directory does not exist.")
+        mp3_dest = environ.get('mp3s')
+        if not os.path.isdir(mp3_dest):
+            sys.exit(f"mp3s environment variable points to {mp3_dest}, but that directory does not exist.")
     elif os.path.isdir('/data/media/mp3s'):
-        MP3_DEST = '/data/media/mp3s'
+        mp3_dest = '/data/media/mp3s'
     elif is_wsl():
-        MP3_DEST = f"{win_home()}/Music"
-        if not os.path.isdir(MP3_DEST):
-            os.abort('Unable to find directory for mp3s.')
+        mp3_dest = f"{win_home()}/Music"
+        if not os.path.isdir(mp3_dest):
+            sys.exit('Unable to find directory for mp3s.')
     else:
-        MP3_DEST = os.path.expanduser('~') + "/Music/mp3s"
-        if not os.path.isdir(MP3_DEST):
-            os.abort('Unable to find directory for mp3s.')
+        mp3_dest = os.path.expanduser('~') + "/Music/mp3s"
+        if not os.path.isdir(mp3_dest):
+            sys.exit('Unable to find directory for mp3s.')
 
-def set_XDEST_VDEST():
-    global XDEST, VDEST
-    XDEST="$HOME/Videos"
-    VDEST="$XDEST"
+def set_xdest_vdest():
+    global xdest, vdest
+    xdest="$HOME/Videos"
+    vdest="$xdest"
     if is_wsl():
-        VDEST = f"{win_home()}/Videos"
-        XDEST = f"{wsl_subdir('storage')}/a_z/videos"
+        vdest = f"{win_home()}/Videos"
+        xdest = f"{wsl_subdir('storage')}/a_z/videos"
     elif os.path.isdir('/data'):
-        VDEST = '/data/media/staging'
-        XDEST = '/data/a_z/videos'
+        vdest = '/data/media/staging'
+        xdest = '/data/a_z/videos'
     else:
-        os.abort('Unable to find staging and videos directory')
+        sys.exit('Unable to find staging and videos directory')
 
 def win_home() -> str:
     path = os.path.expandvars('$PATH').split(':')
     for index, item in enumerate(path):
         if '/AppData/' in item:
             return item.split('/AppData/')[0]
-    os.abort('Unable to determine Windows home directory.')
+    sys.exit('Unable to determine Windows home directory.')
 
 def wsl_subdir(subdir):
     for dir in enumerate(['c', 'e', 'f']):
         dir_fq = f"/mnt/{dir}/{subdir}"
         if os.path.isdir(dir_fq):
             return dir_fq
-    os.abort(f"Unable to find '{subdir}' within /mnt/")
+    sys.exit(f"Unable to find '{subdir}' within /mnt/")
 
 def doit():
     name = media_name(args.url)
     print(f"Saving {name}.{format}")
     ydl_opts = {
-        'format': f'{format}/bestaudio/best',
+        'format': 'mp3/bestaudio/best',
         # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
         'postprocessors': [{  # Extract audio using ffmpeg
             'key': 'FFmpegExtractAudio',
             'preferredcodec': format,
         }],
-        'outtmpl': name
+        'outtmpl': f"{mp3_dest}/{name}"
     }
+
+    if format == 'mp4':
+        ydl_opts.pop('format')
+    if action == 'video':
+        if args.video_dest is not None:
+            ydl_opts['outtmpl'] = f"{args.video_dest}/{name}"
+    else:
+        ydl_opts['outtmpl'] = f"{mp3_dest}/{name}"
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # print(json.dumps(ydl.sanitize_info(info)))
@@ -123,13 +128,14 @@ def doit():
         # run(f"aws s3 cp {mp3_name} {s3_name}")
 
         print("Copying to gojira...")
-        run(f"scp {mp3_name} mslinn@gojira:/data/media/mp3s/")
+        run(f"scp {ydl_opts['outtmpl']} mslinn@gojira:/data/media/mp3s/")
     elif action == 'video' and uname().node != 'gojira':
         print("Copying to gojira...")
-        run(f"scp {name} mslinn@gojira:/data/a_z/videos/")
+        run(f"scp {ydl_opts['outtmpl']} mslinn@gojira:{xdest}/")
     else:
         sys.abort(f"Invalid action '{action}'")
 
-set_XDEST_VDEST()
+set_mp3_dest()
+set_xdest_vdest()
 args = parse_args()
 doit()
