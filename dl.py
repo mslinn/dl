@@ -41,6 +41,7 @@ def parse_args():
     return args
 
 def run(cmd):
+    print(f"Executing {cmd}")
     with subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True) as p:
         while p.poll() == None:
             print(p.stdout.read1().decode('utf-8'), end="")
@@ -129,10 +130,10 @@ def doit(args):
         # run(f"aws s3 cp {mp3_name} {s3_name}")
 
         print("Copying to gojira...")
-        run(f"scp {ydl_opts['outtmpl']} mslinn@gojira:/data/media/mp3s/")
+        run(f"scp {ydl_opts['outtmpl']['default']} mslinn@gojira:/data/media/mp3s/")
     elif action == 'video' and uname().node != 'gojira':
         print("Copying to gojira...")
-        run(f"scp {ydl_opts['outtmpl']} mslinn@gojira:{xdest}/")
+        run(f"scp {ydl_opts['outtmpl']['default']} mslinn@gojira:/data/a_z/videos/")
     else:
         sys.abort(f"Invalid action '{action}'")
 
