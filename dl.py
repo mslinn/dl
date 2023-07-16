@@ -108,30 +108,37 @@ def doit(args):
                 'preferredcodec': format,
             }]
         }
-    print(f"Saving {ydl_opts['outtmpl']}")
+    print(os.path.expandvars(f"Saving {ydl_opts['outtmpl']}.{format}"))
     ydl_opts['quiet'] = True
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # print(json.dumps(ydl.sanitize_info(info)))
         error_code = ydl.download(args.url)
 
+    remotes = config['remotes']
+    file_path = os.path.expandvars(ydl_opts['outtmpl']['default'])
     if action == 'mp3':
         mp3_name = name.replace('.webm', '.mp3')
         mp3_name = mp3_name.replace('.mp4', '.mp3')
 
         # run(f"mp3tag {mp3_name}")
+        for remote_name in list(remotes.keys()):
+            remote = remotes[remote_name]
+            if 'disabled' in remote and remote['disabled']:
+                continue
 
-        print("Copying to gojira...")
-        run(f"scp {ydl_opts['outtmpl']['default']}.{format} mslinn@gojira:/data/media/mp3s/")
+            mp3s = remote['mp3s']
+            target = f"{remote_name}:{mp3s}"
+            print(f"Copying to {target}/{name}.{format}")
+            run(f"scp {file_path}.{format} {target}")
     elif action == 'video':
-        remotes = config['remotes']
         for remote_name in list(remotes.keys()):
             remote = remotes[remote_name]
             if 'disabled' in remote and remote['disabled']:
                 continue
 
             vdest = remote['vdest']
-            print(f"Copying {ydl_opts['outtmpl']['default']} to {remote_name}:{vdest}...")
-            run(f"scp {ydl_opts['outtmpl']['default']} {remote_name}:{vdest}")
+            print(f"Copying {file_path} to {remote_name}:{vdest}")
+            run(f"scp {file_path} {remote_name}:{vdest}")
     else:
         sys.abort(f"Invalid action '{action}'")
 
