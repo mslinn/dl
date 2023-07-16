@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import inspect
-import json
 import os
 import re
 import subprocess
 import sys
+import yaml
 import yt_dlp
 from os import environ
 from platform import uname
@@ -40,6 +39,19 @@ def parse_args():
         format = 'mp4'
     return args
 
+def read_config():
+    global config
+    config_file = os.path.expanduser("~/dl.config")
+    if not os.path.isfile(config_file):
+        os.exit(f"Error: {config_file} does not exist.")
+
+    if is_wsl():
+        os.environ['win_home'] = win_home()
+
+    with open(config_file, mode="rb") as file:
+        config = yaml.safe_load(file)
+
+
 def run(cmd):
     print(f"Executing {cmd}")
     with subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True) as p:
@@ -49,43 +61,24 @@ def run(cmd):
 
 def set_mp3_dest():
     global mp3_dest
-    clip_jam = '/media/mslinn/Clip Jam/Music/playlist'
-    if os.path.isdir(clip_jam):
-        mp3_dest = clip_jam
+    if os.path.isdir(config['mp3s']['automount']):
+        mp3_dest = config['mp3s']['automount']
     elif environ.get('mp3s') is not None:
         mp3_dest = environ.get('mp3s')
         if not os.path.isdir(mp3_dest):
             sys.exit(f"mp3s environment variable points to {mp3_dest}, but that directory does not exist.")
-    elif os.path.isdir('/data/media/mp3s'):
-        mp3_dest = '/data/media/mp3s'
-    elif is_wsl():
-        mp3_dest = f"{win_home()}/Music"
-        if not os.path.isdir(mp3_dest):
-            sys.exit('Unable to find directory for mp3s.')
+    elif os.path.isdir(config['local']['mp3s']):
+        mp3_dest = config['local']['mp3s']
     else:
         mp3_dest = os.path.expanduser('~') + "/Music/mp3s"
         if not os.path.isdir(mp3_dest):
             sys.exit('Unable to find directory for mp3s.')
 
-def set_xdest_vdest():
-    global xdest, vdest
-    xdest="$HOME/Videos"
-    vdest="$xdest"
-    if is_wsl():
-        vdest = f"{win_home()}/Videos"
-        xdest = f"{wsl_subdir('storage')}/a_z/videos"
-    elif os.path.isdir('/data'):
-        vdest = '/data/media/staging'
-        xdest = '/data/a_z/videos'
-    else:
-        sys.exit('Unable to find staging and videos directory')
-
 def win_home() -> str:
-    path = os.path.expandvars('$PATH').split(':')
-    for index, item in enumerate(path):
-        if '/AppData/' in item:
-            return item.split('/AppData/')[0]
-    sys.exit('Unable to determine Windows home directory.')
+    if not is_wsl: os.exit("Error: not running in WSL.")
+
+    linux_dir = subprocess.run(['cmd.exe', '/c', "<nul set /p=%UserProfile%"], capture_output=True, text=True).stdout.strip()
+    return subprocess.run(['/usr/bin/wslpath', linux_dir], capture_output=True, text=True).stdout.strip()
 
 def wsl_subdir(subdir):
     for i, dir in enumerate(['c', 'e', 'f']):
@@ -109,7 +102,7 @@ def doit(args):
     else:
         ydl_opts = {
             # 'format': 'mp3/bestaudio/best',
-            'outtmpl': f"{mp3_dest}/{name}",
+            'outtmpl': f"{config['local']['mp3s']}/{name}",
             'postprocessors': [{  # Extract audio using ffmpeg
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': format,
@@ -130,14 +123,17 @@ def doit(args):
         # run(f"aws s3 cp {mp3_name} {s3_name}")
 
         print("Copying to gojira...")
-        run(f"scp {ydl_opts['outtmpl']['default']} mslinn@gojira:/data/media/mp3s/")
+        run(f"scp {ydl_opts['outtmpl']['default']}.{format} mslinn@gojira:/data/media/mp3s/")
     elif action == 'video' and uname().node != 'gojira':
         print("Copying to gojira...")
         run(f"scp {ydl_opts['outtmpl']['default']} mslinn@gojira:/data/a_z/videos/")
     else:
         sys.abort(f"Invalid action '{action}'")
 
+read_config()
+xdest = config['local']['xdest']
+vdest = config['local']['vdest']
 set_mp3_dest()
-set_xdest_vdest()
+
 args = parse_args()
 doit(args)
