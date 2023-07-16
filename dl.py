@@ -98,7 +98,7 @@ def doit(args):
             vdir = args.video_dest
         ydl_opts = {
             'format': 'mp4',
-            'outtmpl': f"{vdir}/{name}.mp4"
+            'outtmpl': f"{vdir}/{name}"
         }
     else:
         ydl_opts = {
@@ -136,9 +136,10 @@ def doit(args):
             if 'disabled' in remote and remote['disabled']:
                 continue
 
-            vdest = remote['vdest']
-            print(f"Copying {file_path} to {remote_name}:{vdest}")
-            run(f"scp {file_path} {remote_name}:{vdest}")
+            dest = remote['vdest']
+            if args.xrated: dest = remote['xdest']
+            print(f"Copying {file_path}.{format} to {remote_name}:{dest}/")
+            run(f"scp {file_path} {remote_name}:{dest}")
     else:
         sys.abort(f"Invalid action '{action}'")
 
