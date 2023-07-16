@@ -5,30 +5,12 @@ import inspect
 import json
 import os
 import re
+import subprocess
 import sys
 import yt_dlp
 from os import environ
 from platform import uname
-
-def help(msg):
-    if len(msg.strip())>0:
-        print(msg + "\n")
-    print(inspect.cleandoc(f"""
-        {sys.argv[0]} - Download videos from various sites, including YouTube.
-        Can save video, or can just save audio as mp3 to $MP3_DEST on the local machine.
-        Also copies to gojira.
-
-        Usage: $( basename $0) [options] url
-
-        Options are:
-            -h       display this message and quit
-            -v       download video to $VDEST
-            -V dir   download video to any given directory
-            -x       download video to $XDEST
-
-        Last modified 2023-07-15
-        """))
-    exit(1)
+from time import sleep
 
 def is_wsl() -> bool:
     return 'microsoft-standard' in uname().release
@@ -43,12 +25,12 @@ def media_name(URL):
 
 def parse_args():
     global action, dl_options, format
-    parser = argparse.ArgumentParser(prog='dl', description='Downloads media')
+    parser = argparse.ArgumentParser(prog='dl', description='Downloads media', epilog="Last modified 2023-07-16")
     parser.add_argument('url')
-    parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true', help="Enable debug mode")
     parser.add_argument('-v', '--keep-video', action='store_true', help=f"Download video to {VDEST}")
-    parser.add_argument('-x', '--xrated', action='store_true')
-    parser.add_argument('-V', '--video_dest')
+    parser.add_argument('-x', '--xrated', action='store_true', help=f"Download video to {XDEST}")
+    parser.add_argument('-V', '--video_dest', help=f"download video to the specified directory")
     args = parser.parse_args()
 
     action = 'mp3'
@@ -62,11 +44,10 @@ def parse_args():
     return args
 
 def run(cmd):
-    result = run(cmd, capture_output=True, shell=True)
-    errors = result.stderr.strip()
-    if len(errors)>0:
-        print(errors)
-    return result.stdout.strip()
+    with subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True) as p:
+        while p.poll() == None:
+            print(p.stdout.read1().decode('utf-8'), end="")
+            sleep(0.1)
 
 def set_MP3_DEST():
     global MP3_DEST
@@ -149,5 +130,6 @@ def doit():
     else:
         sys.abort(f"Invalid action '{action}'")
 
+set_XDEST_VDEST()
 args = parse_args()
 doit()
