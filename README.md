@@ -1,6 +1,6 @@
 # dl
 
-Download videos and mp3s from YouTube and many other websites.
+Download videos and mp3s from many websites.
 
 ## Installation
 
@@ -12,9 +12,19 @@ Download videos and mp3s from YouTube and many other websites.
 
 2. Copy `dl` and `dl.py` to somewhere on the path.
 
-3. Copy `dl.config` to your home directory and modify to suit.
+3. Define an environment variable called `dl` in `~/.bashrc` that points to the directory where you installed `dl.py`.
+   ```
+   export dl=/mnt/c/work/dl
+   ```
 
-4. Verify the setup is correct:
+4. Reload `~/.bashrc`:
+   ```shell
+   $ source ~/.bashrc
+   ```
+
+5. Copy `dl.config` to your home directory and modify to suit.
+
+6. Verify the setup is correct:
     ```shell
     $ dl -h
     dl - Download videos from various sites.

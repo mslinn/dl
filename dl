@@ -1,3 +1,8 @@
 #!/bin/bash
 
-python3 dl.py "$*"
+if [ -z "$dl" ]; then
+  echo "Error: Environment variable 'dl' is not defined."
+  exit 1
+fi
+
+python3 "$dl/dl.py" $*
