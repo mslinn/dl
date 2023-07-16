@@ -27,8 +27,8 @@ def parse_args():
     parser = argparse.ArgumentParser(prog='dl', description='Downloads media', epilog="Last modified 2023-07-16")
     parser.add_argument('url')
     parser.add_argument('-d', '--debug', action='store_true', help="Enable debug mode")
-    parser.add_argument('-v', '--keep-video', action='store_true', help=f"Download video to {vdest}")
-    parser.add_argument('-x', '--xrated', action='store_true', help=f"Download video to {xdest}")
+    parser.add_argument('-v', '--keep-video', action='store_true', help=os.path.expandvars(f"Download video to {vdest}"))
+    parser.add_argument('-x', '--xrated', action='store_true', help=os.path.expandvars(f"Download video to {xdest}"))
     parser.add_argument('-V', '--video_dest', help=f"download video to the specified directory")
     args = parser.parse_args()
 

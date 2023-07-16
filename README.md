@@ -27,16 +27,20 @@ Download videos and mp3s from many websites.
 6. Verify the setup is correct:
     ```shell
     $ dl -h
-    dl - Download videos from various sites.
-    Can save video, or can just save audio as mp3.
+    usage: dl [-h] [-d] [-v] [-x] [-V VIDEO_DEST] url
 
-    Usage: dl [options] url
+    Downloads media
 
-    Options are:
-      -h       display this message and quit
-      -v       download video to /home/mslinn/Videos
-      -V dir   download video to any given directory
-      -x       download video to /home/mslinn/Videos
+    positional arguments:
+      url
 
-    Last modified 2022-07-24
+    options:
+      -h, --help            show this help message and exit
+      -d, --debug           Enable debug mode
+      -v, --keep-video      Download video to ${media}/staging
+      -x, --xrated          Download video to ${storage}/a_z/videos
+      -V VIDEO_DEST, --video_dest VIDEO_DEST
+                            download video to the specified directory
+
+    Last modified 2023-07-16
     ```
