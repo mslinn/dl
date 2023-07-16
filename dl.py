@@ -87,7 +87,7 @@ def win_home() -> str:
     sys.exit('Unable to determine Windows home directory.')
 
 def wsl_subdir(subdir):
-    for dir in enumerate(['c', 'e', 'f']):
+    for i, dir in enumerate(['c', 'e', 'f']):
         dir_fq = f"/mnt/{dir}/{subdir}"
         if os.path.isdir(dir_fq):
             return dir_fq
@@ -96,24 +96,26 @@ def wsl_subdir(subdir):
 def doit():
     name = media_name(args.url)
     print(f"Saving {name}.{format}")
-    ydl_opts = {
-        'format': 'mp3/bestaudio/best',
-        # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
-        'postprocessors': [{  # Extract audio using ffmpeg
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': format,
-        }],
-        'outtmpl': f"{mp3_dest}/{name}"
-    }
 
-    if format == 'mp4':
-        ydl_opts.pop('format')
+    # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
     if action == 'video':
+        vdir = vdest
         if args.video_dest is not None:
-            ydl_opts['outtmpl'] = f"{args.video_dest}/{name}"
+            vdir = args.video_dest
+        ydl_opts = {
+            'format': 'mp4/bestaudio/best',
+            'outtmpl': f"{vdir}/{name}.mp4",
+            'postprocessors': [{  # Extract audio using ffmpeg
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': format,
+            }]
+        }
     else:
-        ydl_opts['outtmpl'] = f"{mp3_dest}/{name}"
+        ydl_opts = {
+            'outtmpl': f"{mp3_dest}/{name}.mp3"
+        }
 
+    print(f"Saving {ydl_opts['outtmpl']}")
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # print(json.dumps(ydl.sanitize_info(info)))
         error_code = ydl.download(args.url)
