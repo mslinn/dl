@@ -57,7 +57,9 @@ Uses `scp` to copy downloaded media to other computers that run `sshd`.
     $ dl -h
     usage: dl [-h] [-d] [-v] [-x] [-V VIDEO_DEST] url
 
-    Downloads media
+    Downloads media.
+    Defaults to just downloading an MP3, even when the original is a video.
+    MP3s are downloaded to /mnt/c/Users/mslinn/Music.
 
     positional arguments:
       url

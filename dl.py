@@ -5,11 +5,17 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
 import yaml
 import yt_dlp
+from argparse import ArgumentParser, HelpFormatter
 from os import environ
 from platform import uname
 from time import sleep
+
+class RawFormatter(HelpFormatter):
+    def _fill_text(self, text, width, indent):
+        return "\n".join([textwrap.fill(line, width) for line in textwrap.indent(textwrap.dedent(text), indent).splitlines()])
 
 def is_wsl() -> bool:
     return 'microsoft-standard' in uname().release
@@ -24,7 +30,11 @@ def media_name(URL):
 
 def parse_args():
     global action, dl_options, format
-    parser = argparse.ArgumentParser(prog='dl', description='Downloads media', epilog="Last modified 2023-07-16")
+    description = f"Downloads media.\nDefaults to just downloading an MP3, even when the original is a video.\nMP3s are downloaded to {config['local']['mp3s']}."
+    parser = ArgumentParser(prog='dl',
+                            description=os.path.expandvars(description),
+                            epilog=f"Last modified 2023-07-16.",
+                            formatter_class=RawFormatter)
     parser.add_argument('url')
     parser.add_argument('-d', '--debug', action='store_true', help="Enable debug mode")
     parser.add_argument('-v', '--keep-video', action='store_true', help=os.path.expandvars(f"Download video to {vdest}"))
