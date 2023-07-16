@@ -11,7 +11,7 @@
       "request": "launch",
       "program": "dl.py",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": false
     },
     {
       "name": "Python: Current File",

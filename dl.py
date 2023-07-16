@@ -93,9 +93,8 @@ def wsl_subdir(subdir):
             return dir_fq
     sys.exit(f"Unable to find '{subdir}' within /mnt/")
 
-def doit():
+def doit(args):
     name = media_name(args.url)
-    print(f"Saving {name}.{format}")
 
     # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
     if action == 'video':
@@ -103,18 +102,18 @@ def doit():
         if args.video_dest is not None:
             vdir = args.video_dest
         ydl_opts = {
-            'format': 'mp4/bestaudio/best',
-            'outtmpl': f"{vdir}/{name}.mp4",
+            'format': 'mp4',
+            'outtmpl': f"{vdir}/{name}.mp4"
+        }
+    else:
+        ydl_opts = {
+            # 'format': 'mp3/bestaudio/best',
+            'outtmpl': f"{mp3_dest}/{name}",
             'postprocessors': [{  # Extract audio using ffmpeg
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': format,
             }]
         }
-    else:
-        ydl_opts = {
-            'outtmpl': f"{mp3_dest}/{name}.mp3"
-        }
-
     print(f"Saving {ydl_opts['outtmpl']}")
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # print(json.dumps(ydl.sanitize_info(info)))
@@ -140,4 +139,4 @@ def doit():
 set_mp3_dest()
 set_xdest_vdest()
 args = parse_args()
-doit()
+doit(args)
