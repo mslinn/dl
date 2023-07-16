@@ -15,7 +15,7 @@ def is_wsl() -> bool:
     return 'microsoft-standard' in uname().release
 
 def media_name(URL):
-    with yt_dlp.YoutubeDL({}) as ydl:
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
         info = ydl.extract_info(URL, download=False)
 
     name = re.sub(r'[^A-Za-z0-9 ]+', '', info['title']).strip().replace(' ', '_')
@@ -51,12 +51,13 @@ def read_config():
     with open(config_file, mode="rb") as file:
         config = yaml.safe_load(file)
 
-
-def run(cmd):
-    print(f"Executing {cmd}")
+def run(cmd, silent=True):
+    # print(f"Executing {cmd}")
     with subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True) as p:
         while p.poll() == None:
-            print(p.stdout.read1().decode('utf-8'), end="")
+            stdout = p.stdout.read1()
+            if not silent:
+                print(stdout.decode('utf-8'), end="")
             sleep(0.1)
 
 def set_mp3_dest():
@@ -92,7 +93,7 @@ def doit(args):
 
     # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
     if action == 'video':
-        vdir = vdest
+        vdir = config['local']['vdest']
         if args.video_dest is not None:
             vdir = args.video_dest
         ydl_opts = {
@@ -101,7 +102,6 @@ def doit(args):
         }
     else:
         ydl_opts = {
-            # 'format': 'mp3/bestaudio/best',
             'outtmpl': f"{config['local']['mp3s']}/{name}",
             'postprocessors': [{  # Extract audio using ffmpeg
                 'key': 'FFmpegExtractAudio',
@@ -109,6 +109,7 @@ def doit(args):
             }]
         }
     print(f"Saving {ydl_opts['outtmpl']}")
+    ydl_opts['quiet'] = True
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # print(json.dumps(ydl.sanitize_info(info)))
         error_code = ydl.download(args.url)
@@ -118,15 +119,19 @@ def doit(args):
         mp3_name = mp3_name.replace('.mp4', '.mp3')
 
         # run(f"mp3tag {mp3_name}")
-        # s3_name = f"s3://musicmslinn/{basename(mp3_name)})"
-        # print(f"Uploading to {s3_name}")
-        # run(f"aws s3 cp {mp3_name} {s3_name}")
 
         print("Copying to gojira...")
         run(f"scp {ydl_opts['outtmpl']['default']}.{format} mslinn@gojira:/data/media/mp3s/")
-    elif action == 'video' and uname().node != 'gojira':
-        print("Copying to gojira...")
-        run(f"scp {ydl_opts['outtmpl']['default']} mslinn@gojira:/data/a_z/videos/")
+    elif action == 'video':
+        remotes = config['remotes']
+        for remote_name in list(remotes.keys()):
+            remote = remotes[remote_name]
+            if 'disabled' in remote and remote['disabled']:
+                continue
+
+            vdest = remote['vdest']
+            print(f"Copying {ydl_opts['outtmpl']['default']} to {remote_name}:{vdest}...")
+            run(f"scp {ydl_opts['outtmpl']['default']} {remote_name}:{vdest}")
     else:
         sys.abort(f"Invalid action '{action}'")
 
