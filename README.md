@@ -16,7 +16,7 @@ Uses `scp` to copy downloaded media to other computers that run `sshd`.
 
 3. Define an environment variable called `dl` in `~/.bashrc` that points to the directory where you installed `dl.py`.
 
-   ```
+   ```text
    export dl=/mnt/c/work/dl
    ```
 

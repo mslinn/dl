@@ -62,7 +62,7 @@ def read_config():
         config = yaml.safe_load(file)
 
 def run(cmd, silent=True):
-    # print(f"Executing {cmd}")
+    if not silent: print(f"Executing {cmd}")
     with subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True) as p:
         while p.poll() == None:
             stdout = p.stdout.read1()
@@ -106,26 +106,27 @@ def doit(args):
         vdir = config['local']['vdest']
         if args.video_dest is not None:
             vdir = args.video_dest
+        saved_filename = f"{vdir}/{name}"
         ydl_opts = {
             'format': 'mp4',
-            'outtmpl': f"{vdir}/{name}"
+            'outtmpl': f"{saved_filename}.mp4"
         }
     else:
+        saved_filename = f"{config['local']['mp3s']}/{name}"
         ydl_opts = {
-            'outtmpl': f"{config['local']['mp3s']}/{name}",
+            'outtmpl': saved_filename,
             'postprocessors': [{  # Extract audio using ffmpeg
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': format,
             }]
         }
-    print(os.path.expandvars(f"Saving {ydl_opts['outtmpl']}.{format}"))
+    print(os.path.expandvars(f"Saving {saved_filename}.{format}"))
     ydl_opts['quiet'] = True
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         # print(json.dumps(ydl.sanitize_info(info)))
         error_code = ydl.download(args.url)
 
     remotes = config['remotes']
-    file_path = os.path.expandvars(ydl_opts['outtmpl']['default'])
     if action == 'mp3':
         mp3_name = name.replace('.webm', '.mp3')
         mp3_name = mp3_name.replace('.mp4', '.mp3')
@@ -138,8 +139,8 @@ def doit(args):
 
             mp3s = remote['mp3s']
             target = f"{remote_name}:{mp3s}"
-            print(f"Copying to {target}/{name}.{format}")
-            run(f"scp {file_path}.{format} {target}")
+            print(f"Copying to {target}/{mp3_name}.{format}")
+            run(f"scp {saved_filename}.{format} {target}", silent=not args.debug)
     elif action == 'video':
         for remote_name in list(remotes.keys()):
             remote = remotes[remote_name]
@@ -148,8 +149,8 @@ def doit(args):
 
             dest = remote['vdest']
             if args.xrated: dest = remote['xdest']
-            print(f"Copying {file_path}.{format} to {remote_name}:{dest}/")
-            run(f"scp {file_path} {remote_name}:{dest}")
+            print(f"Copying {saved_filename}.{format} to {remote_name}:{dest}/{name}.{format}")
+            run(f"scp {saved_filename}.{format} {remote_name}:{dest}", silent=not args.debug)
     else:
         sys.abort(f"Invalid action '{action}'")
 
