@@ -3,6 +3,7 @@
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -70,6 +71,34 @@ def run(cmd, silent=True):
                 print(stdout.decode('utf-8'), end="")
             sleep(0.1)
 
+# Given a remote node name and a path on that node,
+#  - Create the mount point if it does not exist
+#  - Mount the remote drive on the mount point if not already mounted
+#  - Return the fully qualified path of the mount point
+# The remote_path is assumed to start with a leading slash
+# Example: samba_mount('camille', 'c')
+#  - Creates /mnt/camille/c if it does not already exist
+#  - Mounts '\\camille\c' on '/mnt/camille/c'
+#  - Returns the mount point, '/mnt/camille/c'
+def samba_mount(remote_node, remote_drive):
+    slash = '' if remote_drive.startswith('/') else '/'
+    mount_point = f"/mnt/{remote_node}{slash}{remote_drive}"
+    if not os.path.isdir(mount_point):
+        run(f"sudo mkdir {mount_point}", silent=not args.debug)
+    if not os.path.ismount(mount_point):
+        run(f"sudo mount -t drvfs '\\\\{remote_node}\{remote_drive}' {mount_point}", silent=False)
+    return mount_point
+
+# Parses windows paths of the form C:/path/to/file
+# Returns mount point for node_name and local path on the node
+# Example: samba_parse('camille', 'c:/blah/ick.poo')
+#  returns ['c', '/blah/ick.poo']
+def samba_parse(node_name, win_path):
+    paths = win_path.split(':')
+    if len(paths) != 2:
+        sys.abort(f"Invalid windows path '{win_path}'. Check dl.config.")
+    return paths
+
 def set_mp3_dest():
     global mp3_dest
     if os.path.isdir(config['mp3s']['automount']):
@@ -78,8 +107,8 @@ def set_mp3_dest():
         mp3_dest = environ.get('mp3s')
         if not os.path.isdir(mp3_dest):
             sys.exit(f"mp3s environment variable points to {mp3_dest}, but that directory does not exist.")
-    elif os.path.isdir(config['local']['mp3s']):
-        mp3_dest = config['local']['mp3s']
+    elif os.path.expandvars(os.path.isdir(config['local']['mp3s'])):
+        mp3_dest = os.path.expandvars(config['local']['mp3s'])
     else:
         mp3_dest = os.path.expanduser('~') + "/Music/mp3s"
         if not os.path.isdir(mp3_dest):
@@ -103,7 +132,7 @@ def doit(args):
 
     # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
     if action == 'video':
-        vdir = config['local']['vdest']
+        vdir = os.path.expandvars(config['local']['vdest'])
         if args.video_dest is not None:
             vdir = args.video_dest
         saved_filename = f"{vdir}/{name}"
@@ -112,7 +141,7 @@ def doit(args):
             'outtmpl': f"{saved_filename}.mp4"
         }
     else:
-        saved_filename = f"{config['local']['mp3s']}/{name}"
+        saved_filename = os.path.expandvars(f"{config['local']['mp3s']}/{name}")
         ydl_opts = {
             'outtmpl': saved_filename,
             'postprocessors': [{  # Extract audio using ffmpeg
@@ -137,20 +166,30 @@ def doit(args):
             if 'disabled' in remote and remote['disabled']:
                 continue
 
+            method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
             mp3s = remote['mp3s']
+            source = f"{saved_filename}.{format}"
             target = f"{remote_name}:{mp3s}"
-            print(f"Copying to {target}/{mp3_name}.{format}")
-            run(f"scp {saved_filename}.{format} {target}", silent=not args.debug)
+            if method == 'samba':
+                remote_drive, local_path = samba_parse(remote_name, remote['mp3s'])
+                samba_root = samba_mount(remote_name, remote_drive)
+                target = f"{samba_root}{local_path}/{mp3_name}.{format}"
+                print(f"Copying to {target}")
+                shutil.copyfile(source, target)
+            else:
+                print(f"Copying to {target}/{mp3_name}.{format}")
+                run(f"{method} {source} {target}", silent=not args.debug)
     elif action == 'video':
         for remote_name in list(remotes.keys()):
             remote = remotes[remote_name]
             if 'disabled' in remote and remote['disabled']:
                 continue
 
+            method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
             dest = remote['vdest']
             if args.xrated: dest = remote['xdest']
             print(f"Copying {saved_filename}.{format} to {remote_name}:{dest}/{name}.{format}")
-            run(f"scp {saved_filename}.{format} {remote_name}:{dest}", silent=not args.debug)
+            run(f"{method} {saved_filename}.{format} {remote_name}:{dest}", silent=not args.debug)
     else:
         sys.abort(f"Invalid action '{action}'")
 

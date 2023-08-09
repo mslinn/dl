@@ -5,21 +5,30 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "args": ["-x", "https://www.youtube.com/watch?v=BaW_jenozKc"],
-      "name": "Python: dl.py",
-      "type": "python",
-      "request": "launch",
-      "program": "dl.py",
+      "args": ["https://www.youtube.com/watch?v=BaW_jenozKc"],
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "name": "dl",
+      "program": "dl.py",
+      "request": "launch",
+      "type": "python",
     },
     {
-      "name": "Python: Current File",
+      "args": ["-x", "https://www.youtube.com/watch?v=BaW_jenozKc"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "name": "dl -x",
+      "program": "dl.py",
       "type": "python",
       "request": "launch",
-      "program": "${file}",
+    },
+    {
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "name": "Python: Current File",
+      "program": "${file}",
+      "type": "python",
+      "request": "launch",
     }
   ]
 }
