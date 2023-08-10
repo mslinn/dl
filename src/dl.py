@@ -8,7 +8,7 @@ import textwrap
 import yaml
 import yt_dlp
 import sys
-from src import *
+from . import *
 from argparse import ArgumentParser, HelpFormatter
 from os import environ
 from platform import uname
