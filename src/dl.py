@@ -28,12 +28,12 @@ def media_name(URL):
     return name
 
 def not_disabled(x):
-    print(x)
-    return True
-    return not x.has_key('disabled') or x['disabled']==False
+    name = x[0]
+    props = x[1]
+    return not 'disabled' in props or props['disabled']==False
 
 def active_remotes():
-    return filter(not_disabled, config['remotes'])
+    return map(lambda x: x[0], filter(not_disabled, config['remotes'].items()))
 
 def parse_args():
     global action, dl_options, format
