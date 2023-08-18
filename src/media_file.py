@@ -2,15 +2,13 @@ import os
 import sys
 import remote
 import util
+from dl_config import DLConfig
 from os import environ
 
 class MediaFile:
     def __init__(self, config, path) -> None:
         self.config = config
         self.path = path
-        mp3s = config['mp3s']
-        vdest = config['vdest']
-        xdest = config['xdest']
         self.set_mp3_dest()
 
     def is_mp3(self):
@@ -21,8 +19,8 @@ class MediaFile:
 
     def set_mp3_dest(self):
         global mp3_dest
-        if os.path.isdir(self.config['mp3s']['automount']):
-            mp3_dest = self.config['mp3s']['automount']
+        if os.path.isdir(self.config['mp3s']):
+            mp3_dest = self.config['mp3s']
         elif environ.get('mp3s') is not None:
             mp3_dest = environ.get('mp3s')
             if not os.path.isdir(mp3_dest):

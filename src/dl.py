@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import argument_parse
 import re
 import shutil
 import yt_dlp
 import sys
-from config import read_config
-from media_file import *
+from argument_parse import ArgParse
+from dl_config import DLConfig
+from media_file import MediaFile
 from remote import *
 from util import *
 from os import environ
@@ -91,7 +91,7 @@ def doit(args):
         sys.abort(f"Invalid action '{action}'")
 
 if __name__ == '__main__':
-    read_config()
-    args = argument_parse.parse_args()
-    media_file = media_file.MediaFile(config = config['local'], path='')
+    config = DLConfig()
+    args = ArgParse(config)
+    media_file = MediaFile(config = config.local, path='')
     doit(args)
