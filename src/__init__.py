@@ -1,1 +1,1 @@
-__all__ = [ 'media_file', 'remote', 'util' ]
+__all__ = [ 'dl', 'media_file', 'remote', 'util' ]

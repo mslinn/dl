@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse
+import inspect
 import os
 import re
 import shutil
@@ -8,10 +8,13 @@ import textwrap
 import yaml
 import yt_dlp
 import sys
-from . import *
+from media_file import *
+from remote import *
+from util import *
 from argparse import ArgumentParser, HelpFormatter
 from os import environ
 from platform import uname
+
 class RawFormatter(HelpFormatter):
     def _fill_text(self, text, width, indent):
         return "\n".join([textwrap.fill(line, width) for line in textwrap.indent(textwrap.dedent(text), indent).splitlines()])
@@ -24,19 +27,35 @@ def media_name(URL):
     name = re.sub('__+', '_', name)
     return name
 
+def not_disabled(x):
+    print(x)
+    return True
+    return not x.has_key('disabled') or x['disabled']==False
+
+def active_remotes():
+    return filter(not_disabled, config['remotes'])
+
 def parse_args():
     global action, dl_options, format
-    description = f"""Downloads media.
-                      Defaults to just downloading an MP3, even when the original is a video.
-                      MP3s are downloaded to {config['local']['mp3s']}."""
+    aremotes = ", ".join(list(map(lambda x: x, active_remotes())))
+    description = inspect.cleandoc(f"""
+        Downloads media.
+        Defaults to just downloading an MP3, even when the original is a video, unless the -x, -v or -V options are provided.
+
+        Modify {config_file} to suit; at present,
+        MP3s are downloaded to {config['local']['mp3s']},
+        videos to {config['local']['vdest']}, and
+        x-rated videos to {config['local']['xdest']}.
+        Active remotes are: {aremotes}.
+    """)
     parser = ArgumentParser(prog='dl',
                             description=os.path.expandvars(description),
                             epilog=f"Last modified 2023-07-16.",
                             formatter_class=RawFormatter)
     parser.add_argument('url')
     parser.add_argument('-d', '--debug', action='store_true', help="Enable debug mode")
-    parser.add_argument('-v', '--keep-video', action='store_true', help=os.path.expandvars(f"Download video to {vdest}"))
-    parser.add_argument('-x', '--xrated', action='store_true', help=os.path.expandvars(f"Download video to {xdest}"))
+    parser.add_argument('-v', '--keep-video', action='store_true', help=os.path.expandvars(f"Download video to {config['local']['vdest']} and remotes"))
+    parser.add_argument('-x', '--xrated', action='store_true', help=os.path.expandvars(f"Download video to {config['local']['xdest']} and remotes"))
     parser.add_argument('-V', '--video_dest', help=f"download video to the specified directory")
     args = parser.parse_args()
 
@@ -48,7 +67,7 @@ def parse_args():
     return args
 
 def read_config():
-    global config
+    global config, config_file
     config_file = os.path.expanduser("~/dl.config")
     if not os.path.isfile(config_file):
         os.exit(f"Error: {config_file} does not exist.")
@@ -60,14 +79,15 @@ def read_config():
         config = yaml.safe_load(file)
 
 def doit(args):
+    global vdest
     name = media_name(args.url)
 
     # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
     if action == 'video':
-        vdir = os.path.expandvars(config['local']['vdest'])
+        vdest = os.path.expandvars(config['local']['vdest'])
         if args.video_dest is not None:
-            vdir = args.video_dest
-        saved_filename = f"{vdir}/{name}"
+            vdest = args.video_dest
+        saved_filename = f"{vdest}/{name}"
         ydl_opts = {
             'format': 'mp4',
             'outtmpl': f"{saved_filename}.mp4"
@@ -125,8 +145,8 @@ def doit(args):
     else:
         sys.abort(f"Invalid action '{action}'")
 
-read_config()
-media_file = media_file.MediaFile(config = config['local'])
-
-args = parse_args()
-doit(args)
+if __name__ == '__main__':
+    read_config()
+    args = parse_args()
+    media_file = media_file.MediaFile(config = config['local'], path='')
+    doit(args)

@@ -1,6 +1,7 @@
 import os
 import sys
-from . import *
+import remote
+import util
 from os import environ
 
 class MediaFile:

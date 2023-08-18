@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 from os import environ
-from . import *
 from time import sleep
 from platform import uname
 

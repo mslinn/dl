@@ -1,5 +1,5 @@
 import shutil
-import src.util as util
+import util
 
 class Remote:
     def __init__(self, node_name, disabled=False, method='scp', mp3s = None, vdest = None, xdest = None) -> None:
