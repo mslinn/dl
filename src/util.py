@@ -5,7 +5,6 @@ from os import environ
 from time import sleep
 from platform import uname
 
-
 def is_wsl() -> bool:
     return 'microsoft-standard' in uname().release
 
