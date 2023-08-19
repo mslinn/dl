@@ -47,7 +47,7 @@ class DLConfig:
             os.exit(f"Error: {self.config_file} does not exist.")
 
         if util.is_wsl():
-            os.environ['win_home'] = util.win_home()
+            os.environ['win_home'] = util.win_home().resolve
 
         with open(self.config_file, mode="rb") as file:
             self.config = yaml.safe_load(file)
