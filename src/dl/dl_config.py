@@ -1,36 +1,56 @@
 import os
-import yaml
-import dl.util as util
+from os.path import expandvars
+from yaml import safe_load
 from pathlib import Path
-from typing import List
+from typing import List, Union
+from dl.util import is_wsl, win_home
+
+StrDictNone = Union[str, dict, None]
 
 class DLConfig:
     def __init__(self, config_path="~/dl.config") -> None:
-        self.config_path = config_path
-        self.config      = self.load(config_path)
-        self.local       = DLConfig.get(self, dict=self.config, name='local')
-        self.remotes     = DLConfig.get(self, dict=self.config, name='remotes')
-        # self.disabled = DLConfig.disabled(self.local)
-        # self.mp3s     = DLConfig.mp3s(self.local)
-        # self.vdest    = DLConfig.vdest(self.local)
-        # self.xdest    = DLConfig.xdest(self.local)
+        self.config_path: str = config_path
+        self.config: DLConfig = self.load(config_path)
 
+        x: StrDictNone = DLConfig.get(dict=self.config, name='local')
+        self.local: dict | None = x if isinstance(x, dict) else None
+
+        x = DLConfig.get(dict=self.config, name='remotes')
+        self.remotes: dict | None = x if isinstance(x, dict) else None
+
+    @classmethod
     def disabled(cls, dict) -> bool:
-        return cls.get(dict, 'disabled')
+        x: StrDictNone = cls.get(dict, 'disabled')
+        if isinstance(x, bool):
+            return x
+        return False
 
-    def get(cls, dict, name) -> str | bool | dict:
+    @classmethod
+    def get(cls, dict, name) -> str | dict | None:
         if name in dict:
             return dict[name]
         return None
 
-    def mp3s(cls, dict) -> Path:
-        return Path(cls.get(dict, 'mp3s'))
+    @classmethod
+    def mp3s(cls, dict) -> Path | None:
+        x: StrDictNone = cls.get(dict, 'mp3s')
+        if isinstance(x, str):
+            return Path(expandvars(x))
+        return None
 
-    def vdest(cls, dict) -> Path:
-        return Path(cls.get(dict, 'vdest'))
+    @classmethod
+    def vdest(cls, dict) -> Path | None:
+        x: StrDictNone = cls.get(dict, 'vdest')
+        if isinstance(x, str):
+            return Path(expandvars(x))
+        return None
 
-    def xdest(cls, dict) -> Path:
-        return Path(cls.get(dict, 'xdest'))
+    @classmethod
+    def xdest(cls, dict) -> Path | None:
+        x: StrDictNone = cls.get(dict, 'xdest')
+        if isinstance(x, str):
+            return Path(expandvars(x))
+        return None
 
     def active_remotes(self) -> List[dict]:
         def not_disabled(dict):
@@ -38,7 +58,8 @@ class DLConfig:
                 return not dict['disabled']
             return True
 
-        return map(lambda x: x[0], filter(not_disabled, self.remotes.items()))
+        return list(map(lambda x: x[0], filter(not_disabled, self.remotes.items()))) \
+            if isinstance(self.remotes, dict) else list()
 
     # @return dictionary containing contents of YAML file
     def load(self, config_path="~/dl.config") -> 'DLConfig':
@@ -47,10 +68,10 @@ class DLConfig:
             print(f"Error: {self.config_file} does not exist.")
             exit(1)
 
-        if util.is_wsl():
-            os.environ['win_home'] = str(util.win_home().resolve())
+        if is_wsl():
+            os.environ['win_home'] = str(win_home())
 
         with open(self.config_file, mode="rb") as file:
-            self.config = yaml.safe_load(file)
+            self.config = safe_load(file)
 
         return self.config
