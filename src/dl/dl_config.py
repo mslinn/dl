@@ -18,6 +18,8 @@ class DLConfig:
         x = DLConfig.get(dict=self.config, name='remotes')
         self.remotes: dict | None = x if isinstance(x, dict) else None
 
+        self.active_remotes: List[dict] = self.find_active_remotes()
+
     @classmethod
     def disabled(cls, dict) -> bool:
         x: StrDictNone = cls.get(dict, 'disabled')
@@ -35,7 +37,7 @@ class DLConfig:
     def mp3s(cls, dict) -> Path | None:
         x: StrDictNone = cls.get(dict, 'mp3s')
         if isinstance(x, str):
-            return Path(expandvars(x))
+            return Path(x)
         return None
 
     @classmethod
@@ -52,7 +54,7 @@ class DLConfig:
             return Path(expandvars(x))
         return None
 
-    def active_remotes(self) -> List[dict]:
+    def find_active_remotes(self) -> List[dict]:
         def not_disabled(dict):
             if 'disabled' in dict:
                 return not dict['disabled']
@@ -60,6 +62,13 @@ class DLConfig:
 
         return list(map(lambda x: x[0], filter(not_disabled, self.remotes.items()))) \
             if isinstance(self.remotes, dict) else list()
+
+    # hash is modified becase Python uses call by reference
+    @classmethod
+    def expand_entry(cls, hash: dict, name: str):
+        x: StrDictNone = DLConfig.get(hash, name)
+        if isinstance(x, str):
+            hash[name] = expandvars(x)
 
     # @return dictionary containing contents of YAML file
     def load(self, config_path="~/dl.config") -> 'DLConfig':
@@ -73,5 +82,19 @@ class DLConfig:
 
         with open(self.config_file, mode="rb") as file:
             self.config = safe_load(file)
+
+        local = self.config['local']
+        if local:
+            if 'mp3s'  in local: DLConfig.expand_entry(local, 'mp3s')
+            if 'vdest' in local: DLConfig.expand_entry(local, 'vdest')
+            if 'xdest' in local: DLConfig.expand_entry(local, 'xdest')
+
+        remotes = self.config['remotes']
+        if remotes:
+            for key in remotes:
+                remote = remotes[key]
+                if 'mp3s'  in remote: DLConfig.expand_entry(remote, 'mp3s')
+                if 'vdest' in remote: DLConfig.expand_entry(remote, 'vdest')
+                if 'xdest' in remote: DLConfig.expand_entry(remote, 'xdest')
 
         return self.config
