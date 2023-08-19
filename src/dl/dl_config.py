@@ -44,10 +44,11 @@ class DLConfig:
     def load(self, config_path="~/dl.config") -> 'DLConfig':
         self.config_file = os.path.expanduser(config_path)
         if not os.path.isfile(self.config_file):
-            os.exit(f"Error: {self.config_file} does not exist.")
+            print(f"Error: {self.config_file} does not exist.")
+            exit(1)
 
         if util.is_wsl():
-            os.environ['win_home'] = util.win_home().resolve
+            os.environ['win_home'] = str(util.win_home().resolve())
 
         with open(self.config_file, mode="rb") as file:
             self.config = yaml.safe_load(file)
