@@ -1,8 +1,8 @@
 import os
 from os.path import expandvars
-from yaml import safe_load
 from pathlib import Path
-from typing import List, Union
+from typing import Union
+from yaml import safe_load
 from dl.util import is_wsl, win_home
 
 StrDictNone = Union[str, dict, None]

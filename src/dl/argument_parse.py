@@ -1,4 +1,3 @@
-# from dl_config import DLConfig
 from argparse import ArgumentParser, HelpFormatter
 from inspect import cleandoc
 from os.path import expandvars
@@ -15,7 +14,7 @@ class RawFormatter(HelpFormatter):
         return text
 
 class ArgParse:
-    def __init__(self, config: 'DLConfig') -> None:
+    def __init__(self, config: 'DLConfig') -> None: # type: ignore
         self.action = 'mp3'
         self.config = config
         self.format = 'mp3'
@@ -30,16 +29,16 @@ class ArgParse:
             self.format = 'mp4'
 
     def make_description(self) -> str:
-        remotes = list(self.config.active_remotes())
+        remotes = list(self.config.active_remotes)
         aremotes = ", ".join(list(map(lambda x: x, remotes)))
         return cleandoc(f"""
             Downloads media.
             Defaults to just downloading an MP3, even when the original is a video, unless the -x, -v or -V options are provided.
 
             Modify {self.config.config_file} to suit; at present,
-            MP3s are downloaded to {self.config.local['mp3s']},
-            videos to {self.config.local['vdest']}, and
-            x-rated videos to {self.config.local['xdest']}.
+            MP3s are downloaded to {self.config.mp3s(self.config.local)},
+            videos to {self.config.vdest(self.config.local)}, and
+            x-rated videos to {self.config.xdest(self.config.local)}.
             Active remotes are: {aremotes}.
         """)
 
