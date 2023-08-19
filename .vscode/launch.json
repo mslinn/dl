@@ -4,7 +4,14 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
-
+    {
+      "name": "PyTest",
+      "type": "python",
+      "request": "launch",
+      "program": "src/dl/tests/test_dl_config.py",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
     {
       "name": "Python: Current File",
       "type": "python",
@@ -18,7 +25,7 @@
         "-h"
       ],
       "console": "integratedTerminal",
-      "justMyCode": false,
+      "justMyCode": true,
       "name": "dl help",
       "program": "src/dl.py",
       "request": "launch",
@@ -29,7 +36,7 @@
         "https://www.youtube.com/watch?v=BaW_jenozKc"
       ],
       "console": "integratedTerminal",
-      "justMyCode": false,
+      "justMyCode": true,
       "name": "dl video",
       "program": "src/dl.py",
       "request": "launch",
@@ -41,7 +48,7 @@
         "https://www.youtube.com/watch?v=BaW_jenozKc"
       ],
       "console": "integratedTerminal",
-      "justMyCode": false,
+      "justMyCode": true,
       "name": "dl -x",
       "program": "src/dl.py",
       "type": "python",
