@@ -5,10 +5,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "module": "dl",
       "name": "PyTest",
       "type": "python",
       "request": "launch",
+      "program": "src/dl/tests/test_dl_config.py",
       "console": "integratedTerminal",
       "justMyCode": true
     },
