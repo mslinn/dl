@@ -26,11 +26,12 @@ class TestDLConfig:
 
         assert config.active_remotes
         key = list(filter(lambda x: x == 'mslinn@gojira', config.active_remotes))
-        clipJam = config.active_remotes[0]
-        gojira2 = config.active_remotes[1]
-        bear    = config.active_remotes[2]
-        camille = config.active_remotes[2]
-        print(gojira2)
-        # assert gojira2['mp3s'] == '/data/media/mp3s'
-        # assert gojira2['vdest'] == '/data/media/staging'
-        # assert gojira2['xdest'] == '/data/secret/videos'
+        clipJam = config.active_remotes['clipJam']
+        assert clipJam
+        gojira2 = config.active_remotes['mslinn@gojira']
+        assert gojira2
+        camille = config.active_remotes['camille']
+        assert camille
+        assert gojira2['mp3s'] == '/data/media/mp3s'
+        assert gojira2['vdest'] == '/data/media/staging'
+        assert gojira2['xdest'] == '/data/secret/videos'

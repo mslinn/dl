@@ -18,7 +18,7 @@ class DLConfig:
         x = DLConfig.get(dict=self.config, name='remotes')
         self.remotes: dict | None = x if isinstance(x, dict) else None
 
-        self.active_remotes: List[dict] = self.find_active_remotes()
+        self.active_remotes: dict = self.find_active_remotes()
 
     @classmethod
     def disabled(cls, dict) -> bool:
@@ -54,14 +54,14 @@ class DLConfig:
             return Path(expandvars(x))
         return None
 
-    def find_active_remotes(self) -> List[dict]:
-        def not_disabled(dict):
-            if 'disabled' in dict:
-                return not dict['disabled']
-            return True
-
-        return list(map(lambda x: x[0], filter(not_disabled, self.remotes.items()))) \
-            if isinstance(self.remotes, dict) else list()
+    def find_active_remotes(self) -> dict:
+        result: dict = {}
+        if isinstance(self.remotes, dict):
+            for key in self.remotes:
+                remote = self.remotes[key]
+                if 'disabled' in remote and remote['disabled']: continue
+                result[key] = remote
+        return result
 
     # hash is modified becase Python uses call by reference
     @classmethod
