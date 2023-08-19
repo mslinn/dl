@@ -2,12 +2,17 @@
 from argparse import ArgumentParser, HelpFormatter
 from inspect import cleandoc
 from os.path import expandvars
-from textwrap import fill, dedent
+from textwrap import fill, dedent, indent
 
 # See https://stackoverflow.com/a/64102901/553865
 class RawFormatter(HelpFormatter):
-    def _fill_text(self, text, width, indent):
-        return "\n".join([fill(line, width) for line in indent(dedent(text), indent).splitlines()])
+    def _fill_text(self, text, width, indentr):
+        text = dedent(text)          # Strip the indent from the original python definition that plagues most of us.
+        text = indent(text, indentr)  # Apply any requested indent.
+        text = text.splitlines()              # Make a list of lines
+        text = [fill(line, width) for line in text] # Wrap each line
+        text = "\n".join(text)                # Join the lines again
+        return text
 
 class ArgParse:
     def __init__(self, config: 'DLConfig') -> None:
