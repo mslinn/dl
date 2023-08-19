@@ -5,4 +5,4 @@ if [ -z "$dl" ]; then
   exit 1
 fi
 
-python3 "$dl/src/dl.py" "$@"
+python3 "$dl/src/dl/dl.py" "$@"

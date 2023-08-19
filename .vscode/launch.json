@@ -4,8 +4,19 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
-      "args": ["-h"],
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "args": [
+        "-h"
+      ],
       "console": "integratedTerminal",
       "justMyCode": false,
       "name": "dl help",
@@ -14,7 +25,9 @@
       "type": "python",
     },
     {
-      "args": ["https://www.youtube.com/watch?v=BaW_jenozKc"],
+      "args": [
+        "https://www.youtube.com/watch?v=BaW_jenozKc"
+      ],
       "console": "integratedTerminal",
       "justMyCode": false,
       "name": "dl video",
@@ -23,19 +36,14 @@
       "type": "python",
     },
     {
-      "args": ["-x", "https://www.youtube.com/watch?v=BaW_jenozKc"],
+      "args": [
+        "-x",
+        "https://www.youtube.com/watch?v=BaW_jenozKc"
+      ],
       "console": "integratedTerminal",
       "justMyCode": false,
       "name": "dl -x",
       "program": "src/dl.py",
-      "type": "python",
-      "request": "launch",
-    },
-    {
-      "console": "integratedTerminal",
-      "justMyCode": true,
-      "name": "Python: Current File",
-      "program": "${file}",
       "type": "python",
       "request": "launch",
     }

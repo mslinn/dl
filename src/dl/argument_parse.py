@@ -1,8 +1,8 @@
-from dl_config import DLConfig
-from textwrap import fill, dedent
+# from dl_config import DLConfig
+from argparse import ArgumentParser, HelpFormatter
 from inspect import cleandoc
 from os.path import expandvars
-from argparse import ArgumentParser, HelpFormatter
+from textwrap import fill, dedent
 
 # See https://stackoverflow.com/a/64102901/553865
 class RawFormatter(HelpFormatter):
@@ -10,7 +10,7 @@ class RawFormatter(HelpFormatter):
         return "\n".join([fill(line, width) for line in indent(dedent(text), indent).splitlines()])
 
 class ArgParse:
-    def __init__(self, config: DLConfig) -> None:
+    def __init__(self, config: 'DLConfig') -> None:
         self.action = 'mp3'
         self.config = config
         self.format = 'mp3'
@@ -24,7 +24,7 @@ class ArgParse:
             self.action = 'video'
             self.format = 'mp4'
 
-    def make_description(self):
+    def make_description(self) -> str:
         remotes = list(self.config.active_remotes())
         aremotes = ", ".join(list(map(lambda x: x, remotes)))
         return cleandoc(f"""
@@ -38,7 +38,7 @@ class ArgParse:
             Active remotes are: {aremotes}.
         """)
 
-    def make_arg_parser(self):
+    def make_arg_parser(self) -> ArgumentParser:
         desc = self.make_description()
         desc_expanded = expandvars(desc)
         parser = ArgumentParser(prog='dl',

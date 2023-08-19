@@ -1,35 +1,38 @@
 import os
 import yaml
-import util
+import dl.util as util
+from pathlib import Path
+from typing import List
 
 class DLConfig:
-    def __init__(self) -> None:
-        self.config   = self.load()
-        self.local    = DLConfig.get(self, dict=self.config, name='local')
-        self.remotes  = DLConfig.get(self, dict=self.config, name='remotes')
+    def __init__(self, config_path="~/dl.config") -> None:
+        self.config_path = config_path
+        self.config      = self.load(config_path)
+        self.local       = DLConfig.get(self, dict=self.config, name='local')
+        self.remotes     = DLConfig.get(self, dict=self.config, name='remotes')
         # self.disabled = DLConfig.disabled(self.local)
         # self.mp3s     = DLConfig.mp3s(self.local)
         # self.vdest    = DLConfig.vdest(self.local)
         # self.xdest    = DLConfig.xdest(self.local)
 
-    def disabled(cls, dict):
+    def disabled(cls, dict) -> bool:
         return cls.get(dict, 'disabled')
 
-    def get(cls, dict, name):
+    def get(cls, dict, name) -> str | bool | dict:
         if name in dict:
             return dict[name]
         return None
 
-    def mp3s(cls, dict):
-        return cls.get(dict, 'mp3s')
+    def mp3s(cls, dict) -> Path:
+        return Path(cls.get(dict, 'mp3s'))
 
-    def vdest(cls, dict):
-        return cls.get(dict, 'vdest')
+    def vdest(cls, dict) -> Path:
+        return Path(cls.get(dict, 'vdest'))
 
-    def xdest(cls, dict):
-        return cls.get(dict, 'xdest')
+    def xdest(cls, dict) -> Path:
+        return Path(cls.get(dict, 'xdest'))
 
-    def active_remotes(self):
+    def active_remotes(self) -> List[dict]:
         def not_disabled(dict):
             if 'disabled' in dict:
                 return not dict['disabled']
@@ -38,8 +41,8 @@ class DLConfig:
         return map(lambda x: x[0], filter(not_disabled, self.remotes.items()))
 
     # @return dictionary containing contents of YAML file
-    def load(self):
-        self.config_file = os.path.expanduser("~/dl.config")
+    def load(self, config_path="~/dl.config") -> 'DLConfig':
+        self.config_file = os.path.expanduser(config_path)
         if not os.path.isfile(self.config_file):
             os.exit(f"Error: {self.config_file} does not exist.")
 

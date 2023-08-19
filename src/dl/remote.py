@@ -1,5 +1,6 @@
 import shutil
-import util
+import dl.util as util
+from dl.media_file import MediaFile
 
 class Remote:
     def __init__(self, node_name, disabled=False, method='scp', mp3_path = None, video_path = None, x_path = None) -> None:
@@ -15,13 +16,14 @@ class Remote:
        self.x_path = x_path
 
     # Copy source to remote
-    def copy_to(self, source, other: 'Remote'):
-        if self.method == 'samba':
-            remote_drive, remote_path = util.samba_parse(other.node_name, other.mp3_path)
+    def copy_to(self, media_file: MediaFile, other: 'Remote'):
+        if other.method == 'samba':
+            remote_drive, remote_path = util.samba_parse(other.mp3_path)
             samba_root = util.samba_mount(other.node_name, remote_drive, self.debug)
             target = f"{samba_root}{remote_path}/{self.mp3_name}.{format}"
             print(f"Copying to {target}")
-            shutil.copyfile(source, target)
+            shutil.copyfile(media_file.path, target)
         else:
-            print(f"Copying to {target}/{self.mp3_name}.{format}")
-            util.run(f"{other.method} {source} {target}", silent=not self.debug)
+            target = f"//{other.node_name}/{remote_path}/{media_file.file_name}"
+            print(f"Copying to {target} using {other.method}")
+            util.run(f"{other.method} {media_file.path} {target}", silent=not self.debug)
