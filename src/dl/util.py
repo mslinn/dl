@@ -41,7 +41,7 @@ def samba_mount(remote_node, remote_drive, debug) -> Path:
 # Returns mount point for a path on the node
 # Example: samba_parse('c:/blah/ick.poo')
 #  returns ['c', '/blah/ick.poo']
-def samba_parse(win_path: Path) -> List[str]:
+def samba_parse(win_path: Path|str) -> List[str]:
     paths = str(win_path).split(':')
     if len(paths) != 2:
         exit(f"Invalid windows path '{win_path}'. Check dl.config.")
@@ -54,6 +54,7 @@ def win_home() -> Path:
     wsl_dir = subprocess.run(['/usr/bin/wslpath', linux_dir], capture_output=True, text=True).stdout.strip()
     return Path(wsl_dir)
 
+# TODO: Delete, not used.
 # TODO: The logic is flawed. Completely rewrite
 # TODO: change enumerate to scan for mounted windows drives
 # @return absolute path Path of subdir on mounted drive
