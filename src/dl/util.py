@@ -41,14 +41,14 @@ def samba_mount(remote_node, remote_drive, debug) -> Path:
 # Returns mount point for a path on the node
 # Example: samba_parse('c:/blah/ick.poo')
 #  returns ['c', '/blah/ick.poo']
-def samba_parse(win_path: str) -> List[str]:
-    paths = win_path.split(':')
+def samba_parse(win_path: Path) -> List[str]:
+    paths = str(win_path).split(':')
     if len(paths) != 2:
-        sys.abort(f"Invalid windows path '{win_path}'. Check dl.config.")
+        exit(f"Invalid windows path '{win_path}'. Check dl.config.")
     return paths
 
 def win_home() -> Path:
-    if not is_wsl: os.exit("Error: not running in WSL.")
+    if not is_wsl: exit("Error: not running in WSL.")
 
     linux_dir = subprocess.run(['cmd.exe', '/c', "<nul set /p=%UserProfile%"], capture_output=True, text=True).stdout.strip()
     wsl_dir = subprocess.run(['/usr/bin/wslpath', linux_dir], capture_output=True, text=True).stdout.strip()
@@ -60,6 +60,6 @@ def win_home() -> Path:
 def wsl_subdir(subdir: str) -> Path:
     for i, dir in enumerate(['c', 'e', 'f']):
         dir_fq = Path(f"/mnt/{dir}/{subdir}")
-        if dir_fq.isdir():
+        if dir_fq.is_dir():
             return dir_fq
     sys.exit(f"Unable to find '{subdir}' within /mnt/")

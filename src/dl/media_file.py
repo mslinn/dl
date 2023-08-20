@@ -16,6 +16,7 @@ class MediaFile:
     def is_video(self) -> bool:
       return self.path.name.endswith('.mp4')
 
+    # TODO: Is this a good idea?
     # If mp3s directory specified in config file, use it
     # Else if mp3s is defined as an environment variable, use it
     # Else use ~/Music/mp3s if it exists
