@@ -32,7 +32,7 @@ def samba_mount(remote_node, remote_drive, debug) -> Path:
     slash = '' if remote_drive.startswith('/') else '/'
     mount_point = f"/mnt/{remote_node}{slash}{remote_drive}"
     if not os.path.isdir(mount_point):
-        run(f"sudo mkdir {mount_point}", silent=not debug)
+        run(f"sudo mkdir -p {mount_point}", silent=not debug)
     if not os.path.ismount(mount_point):
         run(f"sudo mount -t drvfs '\\\\{remote_node}\\{remote_drive}' {mount_point}", silent=False)
     return Path(mount_point)
