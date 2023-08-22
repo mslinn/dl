@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from os import environ
 from time import sleep
 from typing import List
 from platform import uname

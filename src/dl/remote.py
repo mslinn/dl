@@ -19,16 +19,39 @@ class Remote:
        self.video_path: PathNone = video_path
        self.x_path: PathNone = x_path
 
-    # Copy source to remote
-    def copy_to(self, media_file: MediaFile, other: 'Remote'):
+    def copy_to(self, purpose: str, media_file: MediaFile, other: 'Remote'):
+        """
+        Copy source to remote, fails if the remote directory does not exist
+        @return None
+        """
+        debug = False
+        remote_path = None
+        name = media_file.path.name
+        match purpose:
+            case 'mp3s':
+                if isinstance(other.mp3s, Path):
+                    remote_path = other.mp3s
+                else:
+                    exit(f"Remote {other.node_name} does not define a path for mp3s.")
+            case 'vdest':
+                if isinstance(other.video_path, Path):
+                    remote_path = other.video_path
+                else:
+                    exit(f"Remote {other.node_name} does not define a path for videos.")
+            case 'xdest':
+                if isinstance(other.x_path, Path):
+                    remote_path = other.x_path
+                else:
+                    exit(f"Remote {other.node_name} does not define a path for x-rated videos.")
+            case _:
+                exit(f"Unknown purpose '{purpose}'")
         if other.method == 'samba':
-            if isinstance(other.mp3s, Path):
-                remote_drive, remote_path = util.samba_parse(other.mp3s)
-                samba_root = util.samba_mount(other.node_name, remote_drive, self.debug)
-                target = f"{samba_root}{remote_path}/{self.mp3s.name}.{format}"
-                print(f"Copying to {target}")
-                shutil.copyfile(media_file.path, target)
-        else:
-            target = f"//{other.node_name}/{remote_path}/{media_file.file_name}"
+            remote_drive, remote_path = util.samba_parse(remote_path)
+            samba_root = util.samba_mount(other.node_name, remote_drive, debug)
+            target = f"{samba_root}{remote_path}/{name}"
             print(f"Copying to {target} using {other.method}")
-            util.run(f"{other.method} {media_file.path} {target}", silent=not self.debug)
+            shutil.copyfile(media_file.path, target)
+        else:
+            target = f"//{other.node_name}/{remote_path}/{name}"
+            print(f"Copying to {target} using {other.method}")
+            util.run(f"{other.method} {media_file.path} {target}", silent=not debug)

@@ -11,10 +11,13 @@ class MediaFile:
         self.mp3_dest = self.set_mp3_dest()
 
     def is_mp3(self) -> bool:
-      return self.path.name.endswith('.mp3')
+        return self.path.name.endswith('.mp3')
 
     def is_video(self) -> bool:
-      return self.path.name.endswith('.mp4')
+        return self.path.name.endswith('.mp4')
+
+    def file_type(self) -> str:
+        return self.path.suffix
 
     # TODO: Is this a good idea?
     # If mp3s directory specified in config file, use it
