@@ -90,7 +90,7 @@ class DL:
                 print(f"Copying {saved_filename}.{format} to {remote_name}:{dest}/{self.name}.{format}")
                 run(f"{method} {saved_filename}.{format} {remote_name}:{dest}", silent=not args.debug)
         else:
-            sys.abort(f"Invalid action '{args.action}'")
+            sys.exit(f"Invalid action '{args.action}'")
 
 if __name__ == '__main__':
     config = DLConfig()
