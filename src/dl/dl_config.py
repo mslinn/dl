@@ -10,7 +10,7 @@ StrDictNone = Union[str, dict, None]
 class DLConfig:
     def __init__(self, config_path="~/dl.config") -> None:
         self.config_path: str = config_path
-        self.config: DLConfig = self.load(config_path)
+        self.config: DLConfig = self.load(config_path=config_path)
 
         x: StrDictNone = DLConfig.get(dictionary=self.config, name='local')
         self.local: dict | None = x if isinstance(x, dict) else None
