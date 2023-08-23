@@ -21,40 +21,75 @@ class DLConfig:
         self.active_remotes: dict = self.find_active_remotes()
 
     @classmethod
-    def disabled(cls, dict) -> bool:
-        x: StrDictNone = cls.get(dict, 'disabled')
+    def disabled(cls, dictionary: dict) -> bool:
+        """Indicates if a remote is defined but disabled
+        Args:
+            dictionary (dict): dictionary defining remote
+        Returns:
+            bool: true if remote is disabled
+        """
+        x: StrDictNone = cls.get(dictionary, 'disabled')
         if isinstance(x, bool):
             return x
         return False
 
     @classmethod
-    def get(cls, dict, name) -> str | dict | None:
-        if name in dict:
-            return dict[name]
+    def get(cls, dictionary: dict, name: str) -> str | dict | None:
+        """
+        Args:
+            dictionary (dict): dictionary defining all remotes
+            name (str): name of dictionary to search for
+        Returns:
+            bool: dictionary for named remote
+        """
+        if name in dictionary:
+            return dictionary[name]
         return None
 
     @classmethod
-    def mp3s(cls, dict) -> Path | None:
-        x: StrDictNone = cls.get(dict, 'mp3s')
-        if isinstance(x, str):
-            return Path(x)
-        return None
-
-    @classmethod
-    def vdest(cls, dict) -> Path | None:
-        x: StrDictNone = cls.get(dict, 'vdest')
+    def mp3s(cls, dictionary: dict) -> Path | None:
+        """Expands environment variables in mp3 Path
+        Args:
+            dictionary (dict): dictionary defining remote
+        Returns:
+            Path if remote defines a Path for mp3s, otherwise returns None
+        """
+        x: StrDictNone = cls.get(dictionary, 'mp3s')
         if isinstance(x, str):
             return Path(expandvars(x))
         return None
 
     @classmethod
-    def xdest(cls, dict) -> Path | None:
-        x: StrDictNone = cls.get(dict, 'xdest')
+    def vdest(cls, dictionary: dict) -> Path | None:
+        """Expands environment variables in video Path
+        Args:
+            dictionary (dict): dictionary defining remote
+        Returns:
+            Path if remote defines a Path for videos, otherwise returns None
+        """
+        x: StrDictNone = cls.get(dictionary, 'vdest')
+        if isinstance(x, str):
+            return Path(expandvars(x))
+        return None
+
+    @classmethod
+    def xdest(cls, dictionary: dict) -> Path | None:
+        """Expands environment variables in x-rated video Path
+        Args:
+            dictionary (dict): dictionary defining remote
+        Returns:
+            Path if remote defines a Path for x-rated videos, otherwise returns None
+        """
+        x: StrDictNone = cls.get(dictionary, 'xdest')
         if isinstance(x, str):
             return Path(expandvars(x))
         return None
 
     def find_active_remotes(self) -> dict:
+        """
+        Returns:
+            dict: dictionary of dictionaries defining all enabled remotes
+        """
         result: dict = {}
         if isinstance(self.remotes, dict):
             for key in self.remotes:

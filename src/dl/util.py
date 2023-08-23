@@ -7,9 +7,19 @@ from typing import List
 from platform import uname
 
 def is_wsl() -> bool:
+    """Detects if running under wsl
+    Returns:
+        bool: true if running under wsl
+    """
     return 'microsoft-standard' in uname().release
 
-def run(cmd, silent=True) -> None:
+def run(cmd: str, silent:bool=True) -> None:
+    """Run command and print output if not silent
+    Args:
+        cmd (str): command to execute
+        silent (bool, optional): suppress output if true (default).
+    """
+
     if not silent: print(f"Executing {cmd}")
     with subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True) as p:
         while p.poll() == None:
@@ -18,16 +28,23 @@ def run(cmd, silent=True) -> None:
                 print(stdout.decode('utf-8'), end="")
             sleep(0.1)
 
-# Given a remote node name and a path on that node,
-#  - Create the mount point if it does not exist
-#  - Mount the remote drive on the mount point if not already mounted
-#  - Return the absolute Path of the mount point
-# The remote_path is assumed to start with a leading slash
-# Example: samba_mount('camille', 'c')
-#  - Creates /mnt/camille/c if it does not already exist
-#  - Mounts '\\camille\c' on '/mnt/camille/c'
-#  - Returns the mount point, '/mnt/camille/c'
-def samba_mount(remote_node, remote_drive, debug) -> Path:
+def samba_mount(remote_node: str, remote_drive: str, debug: bool) -> Path:
+    """ Given a remote node name and a path on that node:
+        - Create the mount point if it does not exist
+        - Mount the remote drive on the mount point if not already mounted
+        - Return the absolute Path of the mount point
+    Example: samba_mount('camille', 'c')
+        - Creates /mnt/camille/c if it does not already exist
+        - Mounts '\\camille\c' on '/mnt/camille/c'
+        - Returns the mount point, '/mnt/camille/c'
+    Args:
+        remote_node (str): network node of the remote
+        remote_drive (str): directory on the remote, must start with leading slash and must exist
+        debug (bool): Enable output if true
+    Returns:
+        Path: path to local mount point, will be created if necessary
+    """
+
     slash = '' if remote_drive.startswith('/') else '/'
     mount_point = f"/mnt/{remote_node}{slash}{remote_drive}"
     if not os.path.isdir(mount_point):

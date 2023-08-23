@@ -21,7 +21,16 @@ class Remote:
        self.video_path: PathNone = video_path
        self.x_path: PathNone = x_path
 
-    def compute_remote_path(self, other: 'Remote', purpose: str):
+    def compute_remote_path(self, other: 'Remote', purpose: str) -> Path:
+        """Return appropriate path on remote node according to the purpose
+
+        Args:
+            other (Remote): remote to obtain path for
+            purpose (str): purpose to obtain path for
+
+        Returns:
+            Path: path on remote for purpose
+        """
         match purpose:
             case 'mp3s':
                 if isinstance(other.mp3s, Path):
@@ -41,7 +50,7 @@ class Remote:
             case _:
                 exit(f"Unknown purpose '{purpose}'")
 
-    def copy_to(self, purpose: str, media_file: MediaFile, other: 'Remote'):
+    def copy_to(self, purpose: str, media_file: MediaFile, other: 'Remote') -> None:
         """
         Copy source to remote, fails if the remote directory does not exist
         @return None

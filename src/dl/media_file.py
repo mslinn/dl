@@ -11,12 +11,27 @@ class MediaFile:
         self.mp3_dest = self.set_mp3_dest()
 
     def is_mp3(self) -> bool:
+        """Indicate if is this MediaFile is an MP3 audio file
+
+        Returns:
+            bool: true if this is MediaFile is an MP3 audio file
+        """
         return self.path.name.endswith('.mp3')
 
     def is_video(self) -> bool:
+        """Indicate if is this MediaFile is a video file
+
+        Returns:
+            bool: true if this is MediaFile is a video file
+        """
         return self.path.name.endswith('.mp4')
 
     def file_type(self) -> str:
+        """Obtains filetype (extension) of this MediaFile
+
+        Returns:
+            str: filetype of this MediaFile
+        """
         return self.path.suffix
 
     # TODO: Is this a good idea?
