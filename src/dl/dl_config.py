@@ -12,10 +12,10 @@ class DLConfig:
         self.config_path: str = config_path
         self.config: DLConfig = self.load(config_path)
 
-        x: StrDictNone = DLConfig.get(dict=self.config, name='local')
+        x: StrDictNone = DLConfig.get(dictionary=self.config, name='local')
         self.local: dict | None = x if isinstance(x, dict) else None
 
-        x = DLConfig.get(dict=self.config, name='remotes')
+        x = DLConfig.get(dictionary=self.config, name='remotes')
         self.remotes: dict | None = x if isinstance(x, dict) else None
 
         self.active_remotes: dict = self.find_active_remotes()

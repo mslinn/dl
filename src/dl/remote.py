@@ -3,25 +3,33 @@ import dl.util as util
 from pathlib import Path
 from typing import Union
 from dl.media_file import MediaFile
+from enum import auto, Enum
+from strenum import LowercaseStrEnum
 
 PathNone = Union[Path, None]
 
+class Method(LowercaseStrEnum):
+    Scp = auto()
+    Samba = auto()
+
+Purpose = Enum('Purpose', ['MP3S', 'VIDEOS', 'XRATED'])
+
 class Remote:
-    def __init__(self, node_name: str, disabled: bool=False, method: str='scp',
+    def __init__(self, node_name: str, disabled: bool=False, method: Method=Method.Scp,
                  mp3_path: PathNone = None, video_path:PathNone = None,
-                 x_path:PathNone = None) -> None:
-       if not method in ['scp', 'samba']:
-            print(f"Error: method '{self.method}' is invalid. Allowable values are: samba and scp")
-            exit(1)
+                 xrated_path:PathNone = None) -> None:
+    #    if not method in ['scp', 'samba']:
+    #         print(f"Error: method '{self.method}' is invalid. Allowable values are: samba and scp")
+    #         exit(1)
 
        self.disabled: bool = disabled
-       self.method: str = method
+       self.method: Method = method
        self.node_name: str = node_name
-       self.mp3s: PathNone = mp3_path
+       self.mp3_path: PathNone = mp3_path
        self.video_path: PathNone = video_path
-       self.x_path: PathNone = x_path
+       self.xrated_path: PathNone = xrated_path
 
-    def compute_remote_path(self, other: 'Remote', purpose: str) -> Path:
+    def compute_remote_path(self, other: 'Remote', purpose: Purpose) -> Path:
         """Return appropriate path on remote node according to the purpose
 
         Args:
@@ -32,25 +40,25 @@ class Remote:
             Path: path on remote for purpose
         """
         match purpose:
-            case 'mp3s':
-                if isinstance(other.mp3s, Path):
-                    return other.mp3s
+            case Purpose.MP3S:
+                if isinstance(other.mp3_path, Path):
+                    return other.mp3_path
                 else:
-                    exit(f"Remote {other.node_name} does not define a path for mp3s.")
-            case 'videos':
+                    exit(f"Error: Remote {other.node_name} does not define a path for mp3s.")
+            case Purpose.VIDEOS:
                 if isinstance(other.video_path, Path):
                     return other.video_path
                 else:
-                    exit(f"Remote {other.node_name} does not define a path for videos.")
-            case 'xrated':
-                if isinstance(other.x_path, Path):
-                    return other.x_path
+                    exit(f"Error: Remote {other.node_name} does not define a path for videos.")
+            case Purpose.XRATED:
+                if isinstance(other.xrated_path, Path):
+                    return other.xrated_path
                 else:
-                    exit(f"Remote {other.node_name} does not define a path for x-rated videos.")
+                    exit(f"Error: Remote {other.node_name} does not define a path for x-rated videos.")
             case _:
-                exit(f"Unknown purpose '{purpose}'")
+                exit(f"Error: Unknown purpose '{purpose}'")
 
-    def copy_to(self, purpose: str, media_file: MediaFile, other: 'Remote') -> None:
+    def copy_to(self, purpose: Purpose, media_file: MediaFile, other: 'Remote') -> None:
         """
         Copy source to remote, fails if the remote directory does not exist
         @return None

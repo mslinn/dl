@@ -8,31 +8,10 @@ class MediaFile:
     def __init__(self, config: DLConfig, path: Path) -> None:
         self.config = config
         self.path = path
-        self.mp3_dest = self.set_mp3_dest()
-
-    def is_mp3(self) -> bool:
-        """Indicate if is this MediaFile is an MP3 audio file
-
-        Returns:
-            bool: true if this is MediaFile is an MP3 audio file
-        """
-        return self.path.name.endswith('.mp3')
-
-    def is_video(self) -> bool:
-        """Indicate if is this MediaFile is a video file
-
-        Returns:
-            bool: true if this is MediaFile is a video file
-        """
-        return self.path.name.endswith('.mp4')
-
-    def file_type(self) -> str:
-        """Obtains filetype (extension) of this MediaFile
-
-        Returns:
-            str: filetype of this MediaFile
-        """
-        return self.path.suffix
+        # self.mp3_dest = self.set_mp3_dest()
+        self.is_mp3 = self.path.name.endswith('.mp3')
+        self.is_video = self.path.name.endswith('.mp4')
+        self.file_type = self.path.suffix.removeprefix('.')
 
     def set_mp3_dest(self) -> None:
         """TODO: Is this a good idea?

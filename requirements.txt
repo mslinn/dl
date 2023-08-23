@@ -1,5 +1,6 @@
 glob2==0.7
 pytest==7.4.0
 PyYAML==6.0.1
+StrEnum==0.4.15
 youtube-dl==2021.12.17
 yt-dlp==2023.7.6
