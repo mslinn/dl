@@ -98,15 +98,25 @@ class DLConfig:
                 result[key] = remote
         return result
 
-    # hash is modified becase Python uses call by reference
     @classmethod
-    def expand_entry(cls, hash: dict, name: str):
+    def expand_entry(cls, hash: dict, name: str) -> None:
+        """Updates hash with modified entry.
+        Works becase Python uses call by reference.
+        Args:
+            hash (dict): Contains entry to be expanded
+            name (str): key for entry to be expanded
+        """
         x: StrDictNone = DLConfig.get(hash, name)
         if isinstance(x, str):
             hash[name] = expandvars(x)
 
-    # @return dictionary containing contents of YAML file
     def load(self, config_path="~/dl.config") -> 'DLConfig':
+        """Parses configuration file
+        Args:
+            config_path (str): points to configuration file
+        Returns:
+            DLConfig: dictionary containing contents of YAML file
+        """
         self.config_file = os.path.expanduser(config_path)
         if not os.path.isfile(self.config_file):
             print(f"Error: {self.config_file} does not exist.")

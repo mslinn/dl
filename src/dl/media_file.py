@@ -34,12 +34,13 @@ class MediaFile:
         """
         return self.path.suffix
 
-    # TODO: Is this a good idea?
-    # If mp3s directory specified in config file, use it
-    # Else if mp3s is defined as an environment variable, use it
-    # Else use ~/Music/mp3s if it exists
-    # Else crash exit
     def set_mp3_dest(self) -> None:
+        """TODO: Is this a good idea?
+            If mp3s directory specified in config file, use it
+            Else if mp3s is defined as an environment variable, use it
+            Else use ~/Music/mp3s if it exists
+            Else crash exit
+        """
         mp3s = self.config.mp3s(self.config.local)
         if isinstance(mp3s, Path) and mp3s.is_dir():
             self.mp3_dest = mp3s
