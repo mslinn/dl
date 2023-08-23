@@ -18,10 +18,6 @@ class Remote:
     def __init__(self, node_name: str, disabled: bool=False, method: Method=Method.Scp,
                  mp3_path: PathNone = None, video_path:PathNone = None,
                  xrated_path:PathNone = None) -> None:
-    #    if not method in ['scp', 'samba']:
-    #         print(f"Error: method '{self.method}' is invalid. Allowable values are: samba and scp")
-    #         exit(1)
-
        self.disabled: bool = disabled
        self.method: Method = method
        self.node_name: str = node_name
@@ -64,15 +60,17 @@ class Remote:
         @return None
         """
         debug = False
-        remote_path = self.compute_remote_path(other, purpose)
+        remote_path = self.compute_remote_path(otber=other, purpose=purpose)
         name = media_file.path.name
-        if other.method == 'samba':
-            remote_drive, remote_path = util.samba_parse(remote_path)
-            samba_root = util.samba_mount(other.node_name, remote_drive, debug)
+        if other.method == Method.Samba:
+            remote_drive, remote_path = util.samba_parse(win_path=remote_path)
+            samba_root = util.samba_mount(remote_node=other.node_name, remote_drive=remote_drive, debug=debug)
             target = f"{samba_root}{remote_path}/{name}"
             print(f"Copying to {target} using {other.method}")
-            shutil.copyfile(media_file.path, target)
-        else:
+            shutil.copyfile(src=media_file.path, dst=target)
+        elif other.method == Method.Scp:
             target = f"//{other.node_name}/{remote_path}/{name}"
             print(f"Copying to {target} using {other.method}")
             util.run(f"{other.method} {media_file.path} {target}", silent=not debug)
+        else:
+            exit(f"Error: Unknown method {other.method}")
