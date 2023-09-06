@@ -20,10 +20,11 @@ class MediaFile:
             Else use ~/Music/mp3s if it exists
             Else crash exit
         """
-        mp3s = self.config.mp3s(self.config.local)
-        if isinstance(mp3s, Path) and mp3s.is_dir():
-            self.mp3_dest = mp3s
-            return
+        if isinstance(self.config.local, dict):
+            mp3s = self.config.mp3s(self.config.local)
+            if isinstance(mp3s, Path) and mp3s.is_dir():
+                self.mp3_dest = mp3s
+                return
 
         mp3s = environ.get('mp3s')
         if isinstance(mp3s, str) and len(str(mp3s))>0:

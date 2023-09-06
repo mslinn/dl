@@ -1,4 +1,4 @@
-from argparse import ArgumentParser, HelpFormatter
+from argparse import ArgumentParser, HelpFormatter, Namespace
 from inspect import cleandoc
 from os.path import expandvars
 from textwrap import fill, dedent, indent
@@ -22,7 +22,7 @@ class ArgParse:
         self.format = 'mp3'
 
         self.parser = self.make_arg_parser()
-        self.args = self.parser.parse_args()
+        self.args: Namespace = self.parser.parse_args()
 
         self.action = 'mp3'
         self.format = 'mp3'

@@ -60,7 +60,7 @@ class Remote:
         @return None
         """
         debug = False
-        remote_path = self.compute_remote_path(otber=other, purpose=purpose)
+        remote_path = self.compute_remote_path(other=other, purpose=purpose)
         name = media_file.path.name
         if other.method == Method.Samba:
             remote_drive, remote_path = util.samba_parse(win_path=remote_path)

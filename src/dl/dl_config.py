@@ -10,7 +10,7 @@ StrDictNone = Union[str, dict, None]
 class DLConfig:
     def __init__(self, config_path="~/dl.config") -> None:
         self.config_path: str = config_path
-        self.config: DLConfig = self.load(config_path=config_path)
+        self.config: dict = self.load(config_path=config_path)
 
         x: StrDictNone = DLConfig.get(dictionary=self.config, name='local')
         self.local: dict | None = x if isinstance(x, dict) else None
@@ -110,7 +110,7 @@ class DLConfig:
         if isinstance(x, str):
             hash[name] = expandvars(x)
 
-    def load(self, config_path="~/dl.config") -> 'DLConfig':
+    def load(self, config_path="~/dl.config") -> dict:
         """Parses configuration file
         Args:
             config_path (str): points to configuration file
