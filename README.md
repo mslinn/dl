@@ -8,10 +8,10 @@ Uses `scp` to copy downloaded media to other computers that run `sshd`.
 1. Install dependencies:
 
    ```shell
-   $ python -m pip install pyyaml
+   $ python -m pip install -r requirements.txt
    ```
 
-2. Copy `dl` and `dl.py` to somewhere on the path.
+2. Copy `dl` to somewhere on the path.
    An easy way to do that is to `git clone` this repository and include the directory on the `PATH`.
 
 3. Define an environment variable called `dl` in `~/.bashrc` that points to the directory where you installed `dl.py`.
@@ -72,7 +72,7 @@ Uses `scp` to copy downloaded media to other computers that run `sshd`.
       -V VIDEO_DEST, --video_dest VIDEO_DEST
                             download video to the specified directory
 
-    Last modified 2023-07-16
+    Last modified 2023-09-06
     ```
 
     If you see an environment variable that was not expanded in the help message,

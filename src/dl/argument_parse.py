@@ -56,7 +56,7 @@ class ArgParse:
         desc_expanded = expandvars(desc)
         parser = ArgumentParser(prog='dl',
                         description=desc_expanded,
-                        epilog=f"Last modified 2023-08-18.",
+                        epilog=f"Last modified 2023-09-06.",
                         formatter_class=RawFormatter)
         parser.add_argument('url')
         parser.add_argument('-d', '--debug', action='store_true', help="Enable debug mode")
