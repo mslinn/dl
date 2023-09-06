@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import sys
 from argparse import Namespace
@@ -97,6 +98,8 @@ class DL:
                         print(f"Copying to {target}/{mp3_name}.{self.arg_parse.format}")
                         run(f"{method} {source} {target}", silent=not self.arg_parse.args.debug)
         elif self.arg_parse.action == 'video':
+            if os.path.isfile(f"{saved_filename}.webm"):
+                os.remove(f"{saved_filename}.webm")
             if isinstance(remotes, dict):
                 for remote_name in list(remotes.keys()):
                     remote = remotes[remote_name]
