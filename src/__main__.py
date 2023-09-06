@@ -8,7 +8,6 @@ from dl.dl_config import DLConfig
 from dl.media_file import MediaFile
 from dl.remote import Remote
 from dl.util import run, samba_mount, samba_parse
-from os import environ
 from os.path import expandvars
 from shutil import copyfile
 from typing import Any
