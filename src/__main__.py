@@ -53,10 +53,10 @@ class DL:
                     'outtmpl': saved_filename,
                     'postprocessors': [{  # Extract audio using ffmpeg
                         'key': 'FFmpegExtractAudio',
-                        'preferredcodec': format,
+                        'preferredcodec': self.arg_parse.format,
                     }]
                 }
-                print(expandvars(f"Saving {saved_filename}.{format}"))
+                print(expandvars(f"Saving {saved_filename}.{self.arg_parse.format}"))
                 self.ydl_opts['quiet'] = True
                 return saved_filename
             else:
@@ -85,16 +85,16 @@ class DL:
 
                     method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
                     mp3s = remote['mp3s']
-                    source = f"{saved_filename}.{format}"
+                    source = f"{saved_filename}.{self.arg_parse.format}"
                     target = f"{remote_name}:{mp3s}"
                     if method == 'samba':
                         remote_drive, local_path = samba_parse(remote['mp3s'])
                         samba_root = samba_mount(remote_name, remote_drive, self.arg_parse.args.debug)
-                        target = f"{samba_root}{local_path}/{mp3_name}.{format}"
+                        target = f"{samba_root}{local_path}/{mp3_name}.{self.arg_parse.format}"
                         print(f"Copying to {target}")
                         copyfile(source, target)
                     else:
-                        print(f"Copying to {target}/{mp3_name}.{format}")
+                        print(f"Copying to {target}/{mp3_name}.{self.arg_parse.format}")
                         run(f"{method} {source} {target}", silent=not self.arg_parse.args.debug)
         elif self.arg_parse.action == 'video':
             if isinstance(remotes, dict):
@@ -106,8 +106,8 @@ class DL:
                     method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
                     dest = remote['vdest']
                     if self.arg_parse.args.xrated: dest = remote['xdest']
-                    print(f"Copying {saved_filename}.{format} to {remote_name}:{dest}/{self.name}.{format}")
-                    run(f"{method} {saved_filename}.{format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
+                    print(f"Copying {saved_filename}.{self.arg_parse.format} to {remote_name}:{dest}/{self.name}.{self.arg_parse.format}")
+                    run(f"{method} {saved_filename}.{self.arg_parse.format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
         else:
             sys.exit(f"Invalid action '{self.arg_parse.action}'")
 
