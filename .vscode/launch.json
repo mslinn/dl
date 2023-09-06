@@ -51,7 +51,7 @@
     },
     {
       "args": [
-        "-V",
+        "-V", ".",
         "https://www.youtube.com/watch?v=BaW_jenozKc"
       ],
       "console": "integratedTerminal",

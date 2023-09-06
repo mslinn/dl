@@ -15,14 +15,14 @@ from yt_dlp import YoutubeDL
 
 class DL:
     def __init__(self, arg_parse: ArgParse) -> None:
-        self.args: Namespace = arg_parse.args
+        self.arg_parse: ArgParse = arg_parse
         self.config: DLConfig = DLConfig()
         self.name: str = self.media_name()
 
     def media_name(self) -> str:
         info: (dict[str, Any] | None) = None
         with YoutubeDL({'quiet': True}) as ydl:
-            info = ydl.extract_info(self.args.url, download=False)
+            info = ydl.extract_info(self.arg_parse.args.url, download=False)
 
         if isinstance(info, dict):
             name = re.sub(r'[^A-Za-z0-9 ]+', '', info['title']).strip().replace(' ', '_')
@@ -32,9 +32,9 @@ class DL:
         return "no_name"
 
     def set_ydl_opts(self) -> str:
-        if self.args.action == 'video':
-            if self.args.video_dest is not None:
-                self.vdest = self.args.video_dest
+        if self.arg_parse.action == 'video':
+            if self.arg_parse.args.video_dest is not None:
+                self.vdest = self.arg_parse.args.video_dest
             elif isinstance(self.config.local, dict) and self.config.local['vdest'] is not None:
                 self.vdest = expandvars(self.config.local['vdest'])
             else:
@@ -66,13 +66,13 @@ class DL:
         saved_filename = self.set_ydl_opts()
         # See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
         with YoutubeDL(self.ydl_opts) as ydl:
-            # print(json.dumps(ydl.sanitize_info(info)))
-            error_code = ydl.download(self.args.url)
+            url = self.arg_parse.args.url
+            error_code = ydl.download([url])
             if error_code:
                 exit(f"Error: ydl.download failed with error code {error_code}")
 
         remotes: (dict|None) = self.config.remotes
-        if self.args.action == 'mp3':
+        if self.arg_parse.action == 'mp3':
             mp3_name = self.name.replace('.webm', '.mp3')
             mp3_name = mp3_name.replace('.mp4', '.mp3')
 
@@ -89,14 +89,14 @@ class DL:
                     target = f"{remote_name}:{mp3s}"
                     if method == 'samba':
                         remote_drive, local_path = samba_parse(remote['mp3s'])
-                        samba_root = samba_mount(remote_name, remote_drive, self.args.debug)
+                        samba_root = samba_mount(remote_name, remote_drive, self.arg_parse.args.debug)
                         target = f"{samba_root}{local_path}/{mp3_name}.{format}"
                         print(f"Copying to {target}")
                         copyfile(source, target)
                     else:
                         print(f"Copying to {target}/{mp3_name}.{format}")
-                        run(f"{method} {source} {target}", silent=not self.args.debug)
-        elif self.args.action == 'video':
+                        run(f"{method} {source} {target}", silent=not self.arg_parse.args.debug)
+        elif self.arg_parse.action == 'video':
             if isinstance(remotes, dict):
                 for remote_name in list(remotes.keys()):
                     remote = remotes[remote_name]
@@ -105,11 +105,11 @@ class DL:
 
                     method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
                     dest = remote['vdest']
-                    if self.args.xrated: dest = remote['xdest']
+                    if self.arg_parse.args.xrated: dest = remote['xdest']
                     print(f"Copying {saved_filename}.{format} to {remote_name}:{dest}/{self.name}.{format}")
-                    run(f"{method} {saved_filename}.{format} {remote_name}:{dest}", silent=not self.args.debug)
+                    run(f"{method} {saved_filename}.{format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
         else:
-            sys.exit(f"Invalid action '{self.args.action}'")
+            sys.exit(f"Invalid action '{self.arg_parse.action}'")
 
 if __name__ == '__main__':
     config: DLConfig = DLConfig()
