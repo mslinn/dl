@@ -4,10 +4,12 @@ import os
 import re
 import sys
 from argparse import Namespace
+from colorama import init as colorama_init
+from colorama import Fore
+from colorama import Style
 from dl.argument_parse import ArgParse
 from dl.dl_config import DLConfig
 from dl.media_file import MediaFile
-from dl.remote import Remote
 from dl.util import run, samba_mount, samba_parse
 from os.path import expandvars
 from shutil import copyfile
@@ -19,6 +21,7 @@ class DL:
         self.arg_parse: ArgParse = arg_parse
         self.config: DLConfig = DLConfig()
         self.name: str = self.media_name()
+        colorama_init()
 
     def media_name(self) -> str:
         info: (dict[str, Any] | None) = None
@@ -80,23 +83,26 @@ class DL:
             # run(f"mp3tag {mp3_name}")
             if isinstance(remotes, dict):
                 for remote_name in list(remotes.keys()):
-                    remote = remotes[remote_name]
-                    if 'disabled' in remote and remote['disabled']:
-                        continue
+                    try:
+                        remote = remotes[remote_name]
+                        if 'disabled' in remote and remote['disabled']:
+                            continue
 
-                    method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
-                    mp3s = remote['mp3s']
-                    source = f"{saved_filename}.{self.arg_parse.format}"
-                    target = f"{remote_name}:{mp3s}"
-                    if method == 'samba':
-                        remote_drive, local_path = samba_parse(remote['mp3s'])
-                        samba_root = samba_mount(remote_name, remote_drive, self.arg_parse.args.debug)
-                        target = f"{samba_root}{local_path}/{mp3_name}.{self.arg_parse.format}"
-                        print(f"Copying to {target}")
-                        copyfile(source, target)
-                    else:
-                        print(f"Copying to {target}/{mp3_name}.{self.arg_parse.format}")
-                        run(f"{method} {source} {target}", silent=not self.arg_parse.args.debug)
+                        method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
+                        mp3s = remote['mp3s']
+                        source = f"{saved_filename}.{self.arg_parse.format}"
+                        target = f"{remote_name}:{mp3s}"
+                        if method == 'samba':
+                            remote_drive, local_path = samba_parse(remote['mp3s'])
+                            samba_root = samba_mount(remote_name, remote_drive, self.arg_parse.args.debug)
+                            target = f"{samba_root}{local_path}/{mp3_name}.{self.arg_parse.format}"
+                            print(f"Copying to {target}")
+                            copyfile(source, target)
+                        else:
+                            print(f"Copying to {target}/{mp3_name}.{self.arg_parse.format}")
+                            run(f"{method} {source} {target}", silent=not self.arg_parse.args.debug)
+                    except Exception as exception:
+                        print("Fore.YELLOW" + type(exception) + f": while copying {saved_filename}.{self.arg_parse.format} to {dest}{Style.RESET_ALL}")
         elif self.arg_parse.action == 'video':
             if os.path.isfile(f"{saved_filename}.webm"):
                 os.remove(f"{saved_filename}.webm")
@@ -106,11 +112,14 @@ class DL:
                     if 'disabled' in remote and remote['disabled']:
                         continue
 
-                    method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
-                    dest = remote['vdest']
-                    if self.arg_parse.args.xrated: dest = remote['xdest']
-                    print(f"Copying {saved_filename}.{self.arg_parse.format} to {remote_name}:{dest}/{self.name}.{self.arg_parse.format}")
-                    run(f"{method} {saved_filename}.{self.arg_parse.format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
+                    try:
+                        method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
+                        dest = remote['vdest']
+                        if self.arg_parse.args.xrated: dest = remote['xdest']
+                        print(f"Copying {saved_filename}.{self.arg_parse.format} to {remote_name}:{dest}/{self.name}.{self.arg_parse.format}")
+                        run(f"{method} {saved_filename}.{self.arg_parse.format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
+                    except Exception as exception:
+                        print("Fore.YELLOW" + type(exception) + f": while copying {saved_filename}.{self.arg_parse.format} to {dest}{Style.RESET_ALL}")
         else:
             sys.exit(f"Invalid action '{self.arg_parse.action}'")
 
