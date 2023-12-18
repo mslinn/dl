@@ -113,12 +113,14 @@ class DL:
                         continue
 
                     try:
-                        method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
+                        print("remote=" + str(remote))
                         dest = remote['vdest']
+                        method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
                         if self.arg_parse.args.xrated: dest = remote['xdest']
                         print(f"Copying {saved_filename}.{self.arg_parse.format} to {remote_name}:{dest}/{self.name}.{self.arg_parse.format}")
                         run(f"{method} {saved_filename}.{self.arg_parse.format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
                     except Exception as exception:
+                        print(str(type(exception)))
                         print("Fore.YELLOW" + str(type(exception)) + f": while copying {saved_filename}.{self.arg_parse.format} to {dest}{Style.RESET_ALL}")
         else:
             sys.exit(f"Invalid action '{self.arg_parse.action}'")
