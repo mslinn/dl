@@ -114,7 +114,7 @@ class DL:
 
                     try:
                         if "vdest" not in remote:
-                            print(f"Warning: {remote_name} has no key called vdest")
+                            print(f"Warning: remote {remote_name} has no key called vdest")
                             continue
                         dest = remote['vdest']
                         method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
