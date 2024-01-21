@@ -3,18 +3,19 @@
 import os
 import re
 import sys
-from argparse import Namespace
-from colorama import init as colorama_init
-from colorama import Fore
-from colorama import Style
-from dl.argument_parse import ArgParse
-from dl.dl_config import DLConfig
-from dl.media_file import MediaFile
-from dl.util import run, samba_mount, samba_parse
-from os.path import expandvars
-from shutil import copyfile
-from typing import Any
-from yt_dlp import YoutubeDL
+try:
+    from colorama import init as colorama_init
+    from colorama import Style
+    from dl.argument_parse import ArgParse
+    from dl.dl_config import DLConfig
+    from dl.util import run, samba_mount, samba_parse
+    from os.path import expandvars
+    from shutil import copyfile
+    from typing import Any
+    from yt_dlp import YoutubeDL
+except ModuleNotFoundError as e:
+    print(f"Error: {e} - Is the right Python virtual environment active?")
+    exit(1)
 
 class DL:
     def __init__(self, arg_parse: ArgParse) -> None:
