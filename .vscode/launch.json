@@ -40,7 +40,7 @@
     },
     {
       "args": [
-        "https://www.youtube.com/watch?v=BaW_jenozKc"
+        "https://www.youtube.com/watch?v=C0DPdy98e4c"
       ],
       "console": "integratedTerminal",
       "justMyCode": true,
@@ -52,7 +52,7 @@
     {
       "args": [
         "-V", ".",
-        "https://www.youtube.com/watch?v=71b1LTgjocM"
+        "https://www.youtube.com/watch?v=C0DPdy98e4c"
       ],
       "console": "integratedTerminal",
       "justMyCode": true,
@@ -64,7 +64,7 @@
     {
       "args": [
         "-x",
-        "https://www.youtube.com/watch?v=BaW_jenozKc"
+        "https://www.youtube.com/watch?v=C0DPdy98e4c"
       ],
       "console": "integratedTerminal",
       "justMyCode": true,

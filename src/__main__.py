@@ -114,10 +114,13 @@ class DL:
                         continue
 
                     try:
-                        if "vdest" not in remote:
+                        if not self.arg_parse.other_dir and "vdest" not in remote:
                             print(f"Warning: remote {remote_name} has no key called vdest")
                             continue
-                        dest = remote['vdest']
+                        if self.arg_parse.other_dir:
+                            dest = remote['other']
+                        else:
+                            dest = remote['vdest']
                         method = remote['method'] if 'method' in remote and remote['method'] else 'scp'
                         if self.arg_parse.args.xrated: dest = remote['xdest']
                         print(f"Copying {saved_filename}.{self.arg_parse.format} to {remote_name}:{dest}/{self.name}.{self.arg_parse.format}")

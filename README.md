@@ -42,11 +42,13 @@ Uses `scp` to copy downloaded media to other computers that run `sshd`.
    remotes:
       mslinn@server1:
          mp3s: /data/media/mp3s
+         other: /home/mslinn/Videos
          vdest: /data/media/staging
          xdest: /data/secret/videos
       mslinn@server2:
          disabled: true
          mp3s: /mnt/e/media/mp3s
+         other: /home/mslinn/Videos
          vdest: /mnt/e/media/staging
          xdest: /mnt/c/secret/videos
    ```

@@ -26,6 +26,12 @@ class ArgParse:
 
         self.action = 'mp3'
         self.format = 'mp3'
+
+        if self.args.video_dest:
+            self.other_dir = True
+        else:
+            self.other_dir = False
+
         if self.args.keep_video or self.args.video_dest or self.args.xrated:
             self.action = 'video'
             self.format = 'mp4'

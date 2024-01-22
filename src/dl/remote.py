@@ -22,7 +22,7 @@ class Remote:
        self.method: Method = method
        self.node_name: str = node_name
        self.mp3_path: PathNone = mp3_path
-       self.video_path: PathNone = video_path
+       self.video_path: PathNone = video_path # TODO: change this value if -V option is specified
        self.xrated_path: PathNone = xrated_path
 
     def compute_remote_path(self, other: 'Remote', purpose: Purpose) -> Path:
