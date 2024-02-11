@@ -5,7 +5,7 @@ import re
 import sys
 try:
     from colorama import init as colorama_init
-    from colorama import Style
+    from colorama import Fore, Back, Style
     from dl.argument_parse import ArgParse
     from dl.dl_config import DLConfig
     from dl.util import run, samba_mount, samba_parse
@@ -109,7 +109,7 @@ class DL:
                 os.remove(f"{saved_filename}.webm")
             if isinstance(remotes, dict):
                 for remote_name in list(remotes.keys()):
-                    dest = '.'
+                    dest = f"{saved_filename}.mp4"
                     remote = remotes[remote_name]
                     if 'disabled' in remote and remote['disabled']:
                         continue
