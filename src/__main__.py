@@ -109,6 +109,7 @@ class DL:
                 os.remove(f"{saved_filename}.webm")
             if isinstance(remotes, dict):
                 for remote_name in list(remotes.keys()):
+                    dest = '.'
                     remote = remotes[remote_name]
                     if 'disabled' in remote and remote['disabled']:
                         continue
