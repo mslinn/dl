@@ -127,7 +127,7 @@ class DL:
                         print(f"Copying {saved_filename}.{self.arg_parse.format} to {remote_name}:{dest}/{self.name}.{self.arg_parse.format}")
                         run(f"{method} {saved_filename}.{self.arg_parse.format} {remote_name}:{dest}", silent=not self.arg_parse.args.debug)
                     except KeyError as exception:
-                        sys.exit(Fore.YELLOW + f" No key called {exception}: while copying {saved_filename}.{self.arg_parse.format} to {dest}{Style.RESET_ALL}")
+                        sys.exit(Fore.YELLOW + f"Error: No key called {exception}: while copying {saved_filename}.{self.arg_parse.format}{Style.RESET_ALL}")
                     except Exception as exception:
                         sys.exit(Fore.YELLOW + str(type(exception)) + f" {exception}: while copying {saved_filename}.{self.arg_parse.format} to {dest}{Style.RESET_ALL}")
         else:
