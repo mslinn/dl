@@ -31,7 +31,7 @@ class DL:
 
         if isinstance(info, dict):
             name = re.sub(r'[^A-Za-z0-9 ]+', '', info['title']).strip().replace(' ', '_')
-            name = re.sub('__+', '_', name)
+            name = re.sub('__+', '_', name)[:200]
             return name
 
         return "no_name"
