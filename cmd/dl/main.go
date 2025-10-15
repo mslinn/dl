@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"dl/pkg/config"
 	"dl/pkg/downloader"
 	"dl/pkg/remote"
+	flag "github.com/spf13/pflag"
 )
 
 // version is set at build time using ldflags
@@ -119,12 +119,12 @@ func main() {
 func parseArgs() *Args {
 	args := &Args{}
 
-	flag.StringVar(&args.configPath, "c", "~/dl.config", "Path to configuration file")
-	flag.BoolVar(&args.debug, "d", false, "Enable debug mode (alias for verbose)")
-	flag.BoolVar(&args.verbose, "v", false, "Enable verbose output")
-	flag.BoolVar(&args.keepVideo, "k", false, "Download and keep video")
-	flag.BoolVar(&args.xrated, "x", false, "Download x-rated video to xdest")
-	flag.StringVar(&args.videoDest, "V", "", "Download video to specified directory")
+	flag.StringVarP(&args.configPath, "config", "c", "~/dl.config", "Path to configuration file")
+	flag.BoolVarP(&args.debug, "debug", "d", false, "Enable debug mode (alias for verbose)")
+	flag.BoolVarP(&args.verbose, "verbose", "v", false, "Enable verbose output")
+	flag.BoolVarP(&args.keepVideo, "keep-video", "k", false, "Download and keep video")
+	flag.BoolVarP(&args.xrated, "xrated", "x", false, "Download x-rated video to xdest")
+	flag.StringVarP(&args.videoDest, "video-dest", "V", "", "Download video to specified directory")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "dl - Download videos and audio from various websites\n\n")
@@ -142,6 +142,7 @@ func parseArgs() *Args {
 		fmt.Fprintf(os.Stderr, "  dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
 		fmt.Fprintf(os.Stderr, "  dl -k https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
 		fmt.Fprintf(os.Stderr, "  dl -V ~/Videos https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
+		fmt.Fprintf(os.Stderr, "  dl -vV . https://www.youtube.com/watch?v=dQw4w9WgXcQ  # Combined flags\n")
 	}
 
 	flag.Parse()

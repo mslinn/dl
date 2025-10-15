@@ -41,9 +41,29 @@ func New(opts *Options) *Downloader {
 // GetMediaName extracts and sanitizes the media title from the URL
 func (d *Downloader) GetMediaName() (string, error) {
 	// Run yt-dlp to get video info in JSON format
-	cmd := exec.Command("yt-dlp", "--dump-json", "--no-warnings", "--no-playlist", d.opts.URL)
+	args := []string{"--dump-json", "--no-playlist"}
+	if d.opts.Verbose {
+		args = append(args, "--verbose")
+	} else {
+		args = append(args, "--no-warnings")
+	}
+	args = append(args, d.opts.URL)
+
+	cmd := exec.Command("yt-dlp", args...)
+
+	if d.opts.Verbose {
+		fmt.Printf("Running: yt-dlp %s\n", strings.Join(args, " "))
+		cmd.Stderr = os.Stderr // Show stderr in verbose mode
+	}
+
 	output, err := cmd.Output()
 	if err != nil {
+		// If not verbose, capture and show the error output
+		if !d.opts.Verbose {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				fmt.Fprintf(os.Stderr, "yt-dlp error: %s\n", string(exitErr.Stderr))
+			}
+		}
 		return "", fmt.Errorf("failed to extract media info: %w", err)
 	}
 
@@ -95,10 +115,10 @@ func (d *Downloader) Download() (string, error) {
 			"--audio-format", d.opts.Format,
 			"--output", outputPath + ".%(ext)s",
 		}
-		if !d.opts.Verbose {
-			args = append(args, "--quiet", "--no-warnings")
+		if d.opts.Verbose {
+			args = append(args, "--verbose", "--progress")
 		} else {
-			args = append(args, "--progress")
+			args = append(args, "--quiet", "--no-warnings")
 		}
 		args = append(args, d.opts.URL)
 
@@ -112,7 +132,7 @@ func (d *Downloader) Download() (string, error) {
 			"--output", outputPath + ".mp4",
 		}
 		if d.opts.Verbose {
-			args = append(args, "--progress")
+			args = append(args, "--verbose", "--progress")
 		} else {
 			args = append(args, "--quiet", "--no-warnings")
 		}
@@ -122,6 +142,10 @@ func (d *Downloader) Download() (string, error) {
 	}
 
 	// Execute yt-dlp
+	if d.opts.Verbose {
+		fmt.Printf("Running: yt-dlp %s\n", strings.Join(args, " "))
+	}
+
 	cmd := exec.Command("yt-dlp", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

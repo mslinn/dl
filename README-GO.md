@@ -139,9 +139,17 @@ dl -x https://www.youtube.com/watch?v=VIDEO_ID
 # Download video to custom directory
 dl -V ~/Downloads https://www.youtube.com/watch?v=VIDEO_ID
 
+# Download video to current directory with verbose output
+dl -v -V . https://www.youtube.com/watch?v=VIDEO_ID
+
 # Use alternate config file
 dl -c /path/to/config.yaml https://www.youtube.com/watch?v=VIDEO_ID
 ```
+
+**Note:** Verbose mode (`-v`) shows:
+- The exact yt-dlp commands being executed
+- Full error output including Python tracebacks if yt-dlp fails
+- Download progress and detailed information
 
 ### Command-Line Options
 
