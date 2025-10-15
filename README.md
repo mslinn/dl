@@ -337,7 +337,7 @@ The program is available as open source under the terms of the MIT License.
 
 ## Additional Information
 
-- [`yt-dlp `documentation](https://github.com/yt-dlp/yt-dlp)
+- [`yt-dlp` documentation](https://github.com/yt-dlp/yt-dlp)
 - [GitHub repository](https://github.com/mslinn/dl)
 
 

@@ -2,6 +2,7 @@
 
 This document describes the release process for the `dl` project. This is intended for project maintainers only.
 
+
 ## Prerequisites
 
 Before creating a release, ensure:
@@ -15,7 +16,9 @@ Before creating a release, ensure:
 5. **CHANGELOG.md is updated** with all changes for this release
 6. **VERSION file** reflects the correct version number (optional - the tool will update it)
 
-**Note:** If you have uncommitted changes, the release tool will automatically prompt you for a commit message, then add, commit, and push all changes before continuing with the release.
+**Note:** If you have uncommitted changes, the release tool will automatically prompt you for a commit message,
+then add, commit, and push all changes before continuing with the release.
+
 
 ## Creating a Release
 
@@ -35,11 +38,13 @@ This creates a `./release` executable in the project root.
 #### Run the Release Tool
 
 **Interactive Mode (prompts for version):**
+
 ```bash
 ./release
 ```
 
 The tool will prompt you for a version number and suggest a default. The default version is determined by:
+
 1. Taking the most recent git tag and incrementing the patch version
 2. Reading the VERSION file (if it exists)
 3. Comparing the two versions and using the newer one as the default
@@ -47,11 +52,13 @@ The tool will prompt you for a version number and suggest a default. The default
 **Example:** If your latest git tag is `v2.0.5` and your VERSION file contains `2.1.0`, the tool will suggest `2.1.0` as the default (since it's newer than the incremented `2.0.6`).
 
 **Specify Version:**
+
 ```bash
 ./release 2.1.0
 ```
 
 **See All Options:**
+
 ```bash
 ./release -h
 ```
@@ -83,6 +90,7 @@ The release tool automates:
     - Upload all binaries and checksums
     - Generate release notes from git commits
 13. **Completion**: Displays the release URL
+
 
 ### Method 2: Manual Release with GoReleaser
 
@@ -132,6 +140,7 @@ goreleaser release --clean
 ```
 
 GoReleaser will:
+
 - Build binaries for all platforms
 - Create archives (tar.gz for Unix, zip for Windows)
 - Generate checksums
@@ -203,11 +212,14 @@ After publishing the release:
 1. **Check the Releases page**: Verify the release appears at https://github.com/mslinn/dl/releases
 2. **Verify binaries**: Confirm all platform binaries are attached and downloadable
 3. **Test installation**: Test `go install` with the new version:
+
    ```bash
    go install github.com/mslinn/dl/cmd/dl@v2.1.0
    ```
+
 4. **Test binary**: Download and run a binary to verify it works correctly
 5. **Check version**: Ensure the binary reports the correct version:
+
    ```bash
    dl -h  # Should show "Version: 2.1.0"
    ```
