@@ -44,7 +44,7 @@ clean: ## Remove built binaries
 
 install: build ## Install binary to system path
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_PATH)..."
-	sudo mv $(BINARY_NAME) $(INSTALL_PATH)/
+	sudo mv $(BIN_DIR)/$(BINARY_NAME) $(INSTALL_PATH)/
 	@echo "Installation complete"
 
 run: build ## Build and run with example URL
