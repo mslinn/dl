@@ -172,10 +172,41 @@ func (d *Downloader) Download() (string, error) {
 }
 
 // CheckYtDlp verifies that yt-dlp is installed and accessible
+// If not found, attempts to install it using pip
 func CheckYtDlp() error {
+	// Check if yt-dlp is already installed
 	cmd := exec.Command("yt-dlp", "--version")
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("yt-dlp not found: please install it (e.g., 'pip install yt-dlp' or download from https://github.com/yt-dlp/yt-dlp)")
+	if err := cmd.Run(); err == nil {
+		return nil // yt-dlp is already installed
 	}
+
+	// yt-dlp not found, attempt to install it
+	fmt.Println("yt-dlp not found. Installing yt-dlp using pip...")
+
+	// Try pip3 first, then pip
+	installCmd := exec.Command("pip3", "install", "yt-dlp")
+	installCmd.Stdout = os.Stdout
+	installCmd.Stderr = os.Stderr
+
+	if err := installCmd.Run(); err != nil {
+		// Try with pip if pip3 failed
+		fmt.Println("Trying with pip instead of pip3...")
+		installCmd = exec.Command("pip", "install", "yt-dlp")
+		installCmd.Stdout = os.Stdout
+		installCmd.Stderr = os.Stderr
+
+		if err := installCmd.Run(); err != nil {
+			return fmt.Errorf("failed to install yt-dlp: %w\nPlease install manually: pip install yt-dlp or download from https://github.com/yt-dlp/yt-dlp", err)
+		}
+	}
+
+	fmt.Println("yt-dlp installed successfully!")
+
+	// Verify installation
+	verifyCmd := exec.Command("yt-dlp", "--version")
+	if err := verifyCmd.Run(); err != nil {
+		return fmt.Errorf("yt-dlp was installed but cannot be found in PATH. Try running the command again or restart your shell")
+	}
+
 	return nil
 }
