@@ -1,8 +1,0 @@
-#!/bin/bash
-
-if [ -z "$dl" ]; then
-  echo "Error: Environment variable 'dl' is not defined."
-  exit 1
-fi
-
-python3 "$dl/src/__main__.py" "$@"

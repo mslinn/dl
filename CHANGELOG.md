@@ -1,8 +1,15 @@
 # Change Log
 
-## v0.1.0 2023-06-16
 
-* Initial release
+## v2.0.0 2025-10-15
+
+* Used Claude to rewrite in Go
+
+
+## v1.0.1 2024-01-22
+
+* Added ability to copy -V video to an `other` directory on remotes.
+  The config file now supports remotes with an `other` entry.
 
 
 ## v1.0.0 2023-09-06
@@ -10,7 +17,6 @@
 * Rewrite
 
 
-## v1.0.1 2024-01-22
+## v0.1.0 2023-06-16
 
-* Added ability to copy -V video to an `other` directory on remotes.
-  The config file now supports remotes with an `other` entry.
+* Initial release
