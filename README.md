@@ -1,6 +1,8 @@
-# `dl` - Media Downloader
+# dl
 
-A command-line tool to download videos and audio from various websites using yt-dlp, with automatic copying to remote destinations via SCP or Samba/CIFS.
+Download videos and mp3s from many websites.
+Uses Samba and `scp` to copy downloaded media to other computers.
+
 
 ## Features
 
@@ -13,14 +15,16 @@ A command-line tool to download videos and audio from various websites using yt-
 - Verbose mode for debugging with full Python stack traces (`-v` or `--verbose`)
 - Cross-platform support (Linux, macOS, Windows/WSL)
 
+
 ## Requirements
 
 - Go 1.21 or higher
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - automatically installed if not found
-- For audio extraction: ffmpeg
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) - automatically installed if not found
+- For audio extraction: `ffmpeg`
 - For remote copying:
   - SSH access for SCP method
   - Samba/CIFS support for Windows shares (WSL)
+
 
 ## Installation
 
@@ -46,21 +50,19 @@ make build
 ./dl -h
 ```
 
+
 ### Upgrading from Python Version
 
 If you previously had the Python version installed, remove old wrappers:
 
 ```bash
-# Check for old Python wrapper
-which -a dl
-
-# Remove if found
-rm ~/.local/bin/dl
-
-# Verify the Go binary is active
-which dl
-file $(which dl)  # Should show: ELF 64-bit LSB executable
+$ which -a dl # Check for old Python wrapper
+$ rm ~/.local/bin/dl
+$ hash -r  # clear command cache
+$ which dl # Verify the Go binary is active
+$ file $(which dl)  # Should show: ELF 64-bit LSB executable
 ```
+
 
 ## Configuration
 
@@ -150,14 +152,14 @@ Options:
 
 Configuration:
   Edit ~/dl.config to configure local and remote destinations.
-  See README-GO.md for configuration details.
+  See DEVELOPMENT.md for build and development details.
 
 Examples:
-  dl https://www.youtube.com/watch?v=dQw4w9WgXcQ
-  dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ
-  dl -k https://www.youtube.com/watch?v=dQw4w9WgXcQ
-  dl -V ~/Videos https://www.youtube.com/watch?v=dQw4w9WgXcQ
-  dl -vV . https://www.youtube.com/watch?v=dQw4w9WgXcQ  # Combined flags
+  $ dl https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  $ dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  $ dl -k https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  $ dl -V ~/Videos https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  $ dl -vV . https://www.youtube.com/watch?v=dQw4w9WgXcQ  # Combined flags
 ```
 
 ### Usage Examples
@@ -186,10 +188,12 @@ dl -c /path/to/config.yaml https://www.youtube.com/watch?v=VIDEO_ID
 ```
 
 **Note on Verbose Mode (`-v`):**
-- Shows the exact yt-dlp commands being executed
-- Displays full error output including Python tracebacks if yt-dlp fails
+
+- Shows the exact `yt-dlp` commands being executed
+- Displays full error output including Python tracebacks if `yt-dlp` fails
 - Shows download progress and detailed debug information
-- Enables yt-dlp's `--verbose` flag for maximum diagnostic output
+- Enables `yt-dlp`'s `--verbose` flag for maximum diagnostic output
+
 
 ## Architecture
 
@@ -231,28 +235,6 @@ dl/
 7. **No Python Dependencies**: Standalone binary with no runtime dependencies (except yt-dlp)
 8. **Improved CLI**: More intuitive flag parsing and help messages
 9. **Verbose Mode**: New `-v`/`--verbose` flag for debugging with full Python stack traces
-
-## Testing
-
-```bash
-# Run all tests
-go test ./...
-
-# Run tests for a specific package
-go test ./pkg/config
-go test ./pkg/downloader
-
-# Run tests with verbose output
-go test -v ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run tests with race detector
-go test -race ./...
-```
-
-**Note:** Some integration tests are skipped by default as they require yt-dlp, network access, or specific system configuration.
 
 ## Differences from Python Version
 
@@ -299,7 +281,7 @@ Error loading config: failed to read config file
 
 ### Permission denied (Samba)
 
-```
+```text
 failed to mount: command failed
 ```
 
@@ -307,11 +289,12 @@ failed to mount: command failed
 
 ### Remote copy failed
 
-```
+```text
 Warning: failed to copy to remote
 ```
 
 **Check:**
+
 - Remote host is accessible via SSH (for SCP)
 - SSH keys are configured for password-less login
 - Remote directories exist and are writable
@@ -320,10 +303,12 @@ Warning: failed to copy to remote
 
 ### Verbose mode shows Python errors
 
-When using `-v`, you may see detailed Python output from yt-dlp. This is intentional and helps diagnose issues.
+When using `-v`, you may see detailed Python output from `yt-dlp`.
+This is intentional and helps diagnose issues.
 
 Example:
-```
+
+```text
 [debug] Command-line config: ['--dump-json', '--no-playlist', '--verbose', 'URL']
 [debug] Python 3.13.3 (CPython x86_64 64bit)
 ERROR: [XHamster] Unknown algorithm ID: 5
@@ -331,103 +316,26 @@ ERROR: [XHamster] Unknown algorithm ID: 5
 
 This detailed output helps identify problems with specific extractors or sites.
 
-## Building for Different Platforms
-
-```bash
-# Linux (current platform)
-make build
-
-# Build for all platforms
-make build-all
-
-# Manual cross-compilation
-GOOS=darwin GOARCH=amd64 go build -o dl-mac ./cmd/dl
-GOOS=windows GOARCH=amd64 go build -o dl.exe ./cmd/dl
-GOOS=linux GOARCH=arm64 go build -o dl-arm64 ./cmd/dl
-```
-
-## Development
-
-### Build and Install Locally
-
-```bash
-# Format code
-make fmt
-
-# Run linter
-make vet
-
-# Run tests
-make test
-
-# Build
-make build
-
-# Install to system path
-sudo make install
-```
-
-### Version Management
-
-The version number is stored in the `VERSION` file at the root of the project. The build process injects this version into the binary at compile time.
-
-To update the version:
-
-1. Edit the `VERSION` file
-2. Update `CHANGELOG.md` with your changes
-3. Rebuild: `make build`
-
-Check the current version:
-```bash
-make version
-# Or after building:
-./dl -h
-```
-
-### Release Process (Maintainers Only)
-
-Use the provided release tool:
-
-```bash
-# Build the release tool
-make build-release-tool
-
-# Interactive release (prompts for version)
-./release
-
-# Release with specific version
-./release 2.1.0
-
-# See all options
-./release -h
-```
-
-The release script automates:
-- Version validation
-- Running tests
-- Updating VERSION file
-- Building binaries for all platforms
-- Creating and pushing git tags
-- Preparing GitHub release
 
 ## Contributing
 
-Contributions are welcome! Please ensure:
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-1. All tests pass: `make test`
-2. Code is formatted: `make fmt`
-3. No linting errors: `make vet`
-4. Add tests for new features
-5. Update documentation
+For developers, see [DEVELOPMENT.md](DEVELOPMENT.md) for build instructions, testing, and development workflows.
+
+For maintainers, see [RELEASING.md](RELEASING.md) for the release process.
+
 
 ## License
 
 The program is available as open source under the terms of the MIT License.
 
+
 ## Additional Information
 
 - [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp)
 - [GitHub repository](https://github.com/mslinn/dl)
+
 
 ## Version History
 
