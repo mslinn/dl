@@ -1,4 +1,4 @@
-# dl
+# dl - A Command-Line Interface to yt-dlp for Downloading Files
 
 Download videos and mp3s from many websites.
 Uses Samba and `scp` to copy downloaded media to other computers.
@@ -7,7 +7,7 @@ Uses Samba and `scp` to copy downloaded media to other computers.
 ## Features
 
 - Download audio (MP3) or video (MP4) from supported websites
-- Automatic installation of yt-dlp if not found
+- Automatic installation of `yt-dlp `if not found
 - Automatic sanitization of filenames
 - **Concurrent copying** to multiple remote destinations for faster performance
 - Support for SCP and Samba/CIFS protocols
@@ -34,26 +34,10 @@ Uses Samba and `scp` to copy downloaded media to other computers.
 go install github.com/mslinn/dl/cmd/dl@latest
 ```
 
-### Build from Source
 
-```bash
-# Clone the repository
-git clone https://github.com/mslinn/dl.git
-cd dl
+### Upgrading from the Python Version
 
-# Build and install
-make build
-sudo make install
-
-# Or just build locally
-make build
-./dl -h
-```
-
-
-### Upgrading from Python Version
-
-If you previously had the Python version installed, remove old wrappers:
+If you previously had the Python version installed, remove the old wrapper file:
 
 ```bash
 $ which -a dl # Check for old Python wrapper
@@ -87,7 +71,7 @@ remotes:
   windows-share:
     disabled: false
     method: samba                  # Windows shares (WSL only)
-    mp3s: c:/media/mp3s           # Windows-style paths
+    mp3s: c:/media/mp3s            # Windows-style paths
     vdest: c:/media/videos
     xdest: c:/secret/videos
 
@@ -96,6 +80,7 @@ remotes:
     method: scp
     mp3s: /backup/music
 ```
+
 
 ### Configuration Options
 
@@ -201,7 +186,7 @@ dl -c /path/to/config.yaml https://www.youtube.com/watch?v=VIDEO_ID
 
 The Go implementation uses a modular package structure:
 
-```
+```text
 dl/
 ├── cmd/
 │   └── dl/
@@ -226,7 +211,7 @@ dl/
 
 ### Key Features
 
-1. **Automatic yt-dlp Installation**: If yt-dlp is not found, the program automatically installs it using pip
+1. **Automatic `yt-dlp` Installation**: If `yt-dlp` is not found, the program automatically installs it using pip
 2. **Concurrent Remote Copying**: Files are copied to all configured remotes simultaneously using goroutines
 3. **Better Separation of Concerns**: Each package has a single, well-defined responsibility
 4. **Comprehensive Testing**: Unit tests for all packages with good coverage
@@ -243,7 +228,7 @@ dl/
    - New `-v`/`--verbose` flag for debugging output
    - Python's `-d` (debug) is now an alias for `-v` (verbose)
 
-2. **Automatic yt-dlp installation**: The Go version installs yt-dlp if not found
+2. **Automatic `yt-dlp` installation**: The Go version installs `yt-dlp` if not found
 
 3. **Concurrent copying**: Remote copies happen in parallel for better performance
 
@@ -253,27 +238,29 @@ dl/
 
 6. **Cleaner code structure**: Better organized with clear package boundaries
 
+
 ## Troubleshooting
 
-### yt-dlp not found
+### `yt-dlp` not found
 
-If yt-dlp is not installed, the program will automatically install it:
+If `yt-dlp `is not installed, the program will automatically install it:
 
-```
+```text
 yt-dlp not found. Installing yt-dlp using pip...
 [pip installation output]
 yt-dlp installed successfully!
 ```
 
 If automatic installation fails, install manually:
+
 ```bash
-pip install yt-dlp
+$ pip install yt-dlp
 # Or download from: https://github.com/yt-dlp/yt-dlp/releases
 ```
 
 ### Config file not found
 
-```
+```text
 Error loading config: failed to read config file
 ```
 
@@ -333,18 +320,10 @@ The program is available as open source under the terms of the MIT License.
 
 ## Additional Information
 
-- [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp)
+- [`yt-dlp `documentation](https://github.com/yt-dlp/yt-dlp)
 - [GitHub repository](https://github.com/mslinn/dl)
 
 
 ## Version History
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
-
-- **2.0.0** - Initial Go implementation with modular architecture
-  - Added automatic yt-dlp installation
-  - Added concurrent remote copying
-  - Added comprehensive unit tests
-  - Added `-v`/`--verbose` flag with full stack traces
-  - Improved error handling and reporting
-  - Version number stored in VERSION file

@@ -62,6 +62,23 @@ dl/
 
 ## Building
 
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/mslinn/dl.git
+cd dl
+
+# Build and install
+make build
+sudo make install
+
+# Or just build locally
+make build
+./dl -h
+```
+
+
 ### Build the Main Binary
 
 ```bash

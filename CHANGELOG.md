@@ -4,6 +4,10 @@
 ## v2.0.0 2025-10-15
 
 * Used Claude to rewrite in Go
+* Added concurrent remote copying
+* Added comprehensive unit tests
+* Added `-v`/`--verbose` flag with full stack traces
+* Improved error handling and reporting
 
 
 ## v1.0.1 2024-01-22
