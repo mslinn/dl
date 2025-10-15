@@ -12,7 +12,7 @@ help: ## Show this help message
 
 build: ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
-	go build -o $(BINARY_NAME) ./cmd/dl
+	go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME) ./cmd/dl
 	@echo "Build complete: ./$(BINARY_NAME)"
 
 build-release-tool: ## Build the release tool (developers only)
@@ -63,11 +63,11 @@ lint: ## Run golint (requires golint to be installed)
 
 build-all: ## Build for all platforms
 	@echo "Building for all platforms..."
-	GOOS=linux GOARCH=amd64 go build -o $(BINARY_NAME)-linux-amd64 ./cmd/dl
-	GOOS=linux GOARCH=arm64 go build -o $(BINARY_NAME)-linux-arm64 ./cmd/dl
-	GOOS=darwin GOARCH=amd64 go build -o $(BINARY_NAME)-darwin-amd64 ./cmd/dl
-	GOOS=darwin GOARCH=arm64 go build -o $(BINARY_NAME)-darwin-arm64 ./cmd/dl
-	GOOS=windows GOARCH=amd64 go build -o $(BINARY_NAME)-windows-amd64.exe ./cmd/dl
+	GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-linux-amd64 ./cmd/dl
+	GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-linux-arm64 ./cmd/dl
+	GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-darwin-amd64 ./cmd/dl
+	GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-darwin-arm64 ./cmd/dl
+	GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-windows-amd64.exe ./cmd/dl
 	@echo "Build complete for all platforms"
 
 deps: ## Download dependencies

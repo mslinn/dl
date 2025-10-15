@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "embed"
 	"flag"
 	"fmt"
 	"os"
@@ -13,8 +12,9 @@ import (
 	"dl/pkg/remote"
 )
 
-//go:embed ../../VERSION
-var version string
+// version is set at build time using ldflags
+// Example: go build -ldflags "-X main.version=2.0.0"
+var version = "dev"
 
 type Args struct {
 	url        string

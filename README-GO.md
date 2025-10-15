@@ -39,13 +39,24 @@ pip install yt-dlp
 # Clone the repository or navigate to the dl directory
 cd /path/to/dl
 
-# Build the binary
-go build -o dl ./cmd/dl
+# Build the binary (version is injected automatically)
+make build
 
-# Optionally, install to your PATH
-sudo mv dl /usr/local/bin/
-# Or add to your personal bin directory
-mv dl ~/bin/
+# Install to system PATH
+make install
+```
+
+**Note:** If you previously had the Python version installed, you may need to remove old wrappers:
+```bash
+# Check for old Python wrapper
+which -a dl
+
+# Remove if found in ~/.local/bin
+rm ~/.local/bin/dl
+
+# Verify the Go binary is active
+which dl
+file $(which dl)  # Should show: ELF 64-bit LSB executable
 ```
 
 ## Configuration
@@ -311,7 +322,7 @@ Same license as the original Python version.
 
 ## Version Management
 
-The version number is stored in the `VERSION` file at the root of the project. The build process automatically embeds this version into the binary using Go's `//go:embed` directive.
+The version number is stored in the `VERSION` file at the root of the project. The build process injects this version into the binary at compile time using Go's `-ldflags` with `-X main.version=$(VERSION)`.
 
 ### Manual Version Update
 
@@ -319,6 +330,11 @@ To update the version manually:
 1. Edit the `VERSION` file
 2. Update `CHANGELOG.md` with your changes
 3. Rebuild: `make build`
+
+The Makefile automatically reads the VERSION file and passes it to the build:
+```bash
+go build -ldflags "-X main.version=$(VERSION)" -o dl ./cmd/dl
+```
 
 You can check the current version with:
 ```bash
