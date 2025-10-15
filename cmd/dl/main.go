@@ -136,7 +136,7 @@ func parseArgs() *Args {
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nConfiguration:\n")
 		fmt.Fprintf(os.Stderr, "  Edit ~/dl.config to configure local and remote destinations.\n")
-		fmt.Fprintf(os.Stderr, "  See README.md for configuration details.\n\n")
+		fmt.Fprintf(os.Stderr, "  See README-GO.md for configuration details.\n\n")
 		fmt.Fprintf(os.Stderr, "Examples:\n")
 		fmt.Fprintf(os.Stderr, "  dl https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
 		fmt.Fprintf(os.Stderr, "  dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")

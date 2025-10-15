@@ -1,22 +1,22 @@
-# dl - Media Downloader (Go Version)
+# `dl` - Media Downloader
 
-Download videos and audio from various websites using yt-dlp, with automatic copying to remote destinations.
-
-This is a complete rewrite of the Python version in Go, featuring a more modular architecture and enhanced functionality.
+A command-line tool to download videos and audio from various websites using yt-dlp, with automatic copying to remote destinations via SCP or Samba/CIFS.
 
 ## Features
 
 - Download audio (MP3) or video (MP4) from supported websites
+- Automatic installation of yt-dlp if not found
 - Automatic sanitization of filenames
-- Support for multiple remote destinations (SCP and Samba/CIFS)
+- **Concurrent copying** to multiple remote destinations for faster performance
+- Support for SCP and Samba/CIFS protocols
 - Configurable local and remote paths via YAML configuration
-- Verbose mode for debugging (`-v` or `--verbose`)
+- Verbose mode for debugging with full Python stack traces (`-v` or `--verbose`)
 - Cross-platform support (Linux, macOS, Windows/WSL)
 
 ## Requirements
 
 - Go 1.21 or higher
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) installed and in PATH
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - automatically installed if not found
 - For audio extraction: ffmpeg
 - For remote copying:
   - SSH access for SCP method
@@ -24,34 +24,37 @@ This is a complete rewrite of the Python version in Go, featuring a more modular
 
 ## Installation
 
-### Install yt-dlp
+### Quick Install
 
 ```bash
-# Using pip
-pip install yt-dlp
-
-# Or download binary from https://github.com/yt-dlp/yt-dlp
+go install github.com/mslinn/dl/cmd/dl@latest
 ```
 
-### Build from source
+### Build from Source
 
 ```bash
-# Clone the repository or navigate to the dl directory
-cd /path/to/dl
+# Clone the repository
+git clone https://github.com/mslinn/dl.git
+cd dl
 
-# Build the binary (version is injected automatically)
+# Build and install
 make build
+sudo make install
 
-# Install to system PATH
-make install
+# Or just build locally
+make build
+./dl -h
 ```
 
-**Note:** If you previously had the Python version installed, you may need to remove old wrappers:
+### Upgrading from Python Version
+
+If you previously had the Python version installed, remove old wrappers:
+
 ```bash
 # Check for old Python wrapper
 which -a dl
 
-# Remove if found in ~/.local/bin
+# Remove if found
 rm ~/.local/bin/dl
 
 # Verify the Go binary is active
@@ -61,7 +64,9 @@ file $(which dl)  # Should show: ELF 64-bit LSB executable
 
 ## Configuration
 
-Create a configuration file at `~/dl.config` in YAML format:
+Create a configuration file at `~/dl.config` in YAML format.
+
+### Configuration Example
 
 ```yaml
 local:
@@ -72,41 +77,44 @@ local:
 remotes:
   my-server:
     disabled: false
-    method: scp                    # scp or samba
+    method: scp                    # Transfer via SSH/SCP
     mp3s: /data/media/mp3s
     vdest: /data/media/staging
     xdest: /data/secret/videos
 
   windows-share:
     disabled: false
-    method: samba                  # For Windows shares (WSL only)
-    mp3s: c:/media/mp3s           # Windows-style paths for samba
+    method: samba                  # Windows shares (WSL only)
+    mp3s: c:/media/mp3s           # Windows-style paths
     vdest: c:/media/videos
     xdest: c:/secret/videos
 
   backup-server:
-    disabled: true                 # This remote is disabled
+    disabled: true                 # Disabled remote
     method: scp
     mp3s: /backup/music
-    vdest: /backup/videos
 ```
 
 ### Configuration Options
 
 #### Local Paths
-- `mp3s`: Directory for downloaded audio files
-- `vdest`: Directory for video files (used with `-k` flag)
-- `xdest`: Directory for x-rated videos (used with `-x` flag)
+
+- **`mp3s`**: Directory for downloaded audio files
+- **`vdest`**: Directory for video files (used with `-k` flag)
+- **`xdest`**: Directory for x-rated videos (used with `-x` flag)
 
 #### Remote Configuration
-- `disabled`: Set to `true` to temporarily disable a remote
-- `method`: Transfer method (`scp` or `samba`)
-- `mp3s`: Remote path for MP3 files
-- `vdest`: Remote path for videos
-- `xdest`: Remote path for x-rated content
-- `other`: Alternative remote path (for custom destinations)
 
-### Environment Variables
+- **`disabled`**: Set to `true` to temporarily disable a remote
+- **`method`**: Transfer method (`scp` or `samba`)
+  - For SCP: Use format `username@hostname` as the remote name
+  - For Samba: Use just the hostname (e.g., `myserver`, not `user@myserver`)
+- **`mp3s`**: Remote path for MP3 files
+- **`vdest`**: Remote path for videos
+- **`xdest`**: Remote path for x-rated content
+- **`other`**: Alternative remote path (for custom destinations)
+
+#### Environment Variables
 
 You can use environment variables in the configuration file:
 
@@ -117,17 +125,48 @@ local:
   xdest: ${STORAGE_DIR}/secret/videos
 ```
 
-For WSL users, a special `$win_home` variable is automatically set to your Windows home directory.
+For WSL users, a special `${win_home}` variable is automatically set to your Windows home directory.
 
 ## Usage
 
-### Basic Usage
+```text
+dl - Download videos and audio from various websites
+
+Version: 2.0.0
+
+Usage: dl [options] URL
+
+Downloads media from URLs using yt-dlp.
+By default, downloads audio as MP3, unless -k, -x, or -V options are provided.
+
+Options:
+  -c, --config string    Path to configuration file (default "~/dl.config")
+  -d, --debug            Enable debug mode (alias for verbose)
+  -k, --keep-video       Download and keep video
+  -v, --verbose          Enable verbose output
+  -V, --video-dest string
+                         Download video to specified directory
+  -x, --xrated           Download x-rated video to xdest
+
+Configuration:
+  Edit ~/dl.config to configure local and remote destinations.
+  See README-GO.md for configuration details.
+
+Examples:
+  dl https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  dl -k https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  dl -V ~/Videos https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  dl -vV . https://www.youtube.com/watch?v=dQw4w9WgXcQ  # Combined flags
+```
+
+### Usage Examples
 
 ```bash
 # Download audio (MP3) - default behavior
 dl https://www.youtube.com/watch?v=VIDEO_ID
 
-# Download audio with verbose output
+# Download audio with verbose output (shows Python stack traces on errors)
 dl -v https://www.youtube.com/watch?v=VIDEO_ID
 
 # Download and keep video
@@ -140,36 +179,23 @@ dl -x https://www.youtube.com/watch?v=VIDEO_ID
 dl -V ~/Downloads https://www.youtube.com/watch?v=VIDEO_ID
 
 # Download video to current directory with verbose output
-dl -v -V . https://www.youtube.com/watch?v=VIDEO_ID
+dl -vV . https://www.youtube.com/watch?v=VIDEO_ID
 
 # Use alternate config file
 dl -c /path/to/config.yaml https://www.youtube.com/watch?v=VIDEO_ID
 ```
 
-**Note:** Verbose mode (`-v`) shows:
-- The exact yt-dlp commands being executed
-- Full error output including Python tracebacks if yt-dlp fails
-- Download progress and detailed information
+**Note on Verbose Mode (`-v`):**
+- Shows the exact yt-dlp commands being executed
+- Displays full error output including Python tracebacks if yt-dlp fails
+- Shows download progress and detailed debug information
+- Enables yt-dlp's `--verbose` flag for maximum diagnostic output
 
-### Command-Line Options
+## Architecture
 
-```
-Usage: dl [options] URL
+### Modular Design
 
-Options:
-  -c string
-        Path to configuration file (default "~/dl.config")
-  -d    Enable debug mode (alias for verbose)
-  -k    Download and keep video
-  -v    Enable verbose output
-  -V string
-        Download video to specified directory
-  -x    Download x-rated video to xdest
-```
-
-## Project Structure
-
-The Go version is organized into modular packages:
+The Go implementation uses a modular package structure:
 
 ```
 dl/
@@ -190,61 +216,43 @@ dl/
 │       ├── util.go              # Utility functions
 │       └── util_test.go         # Utility tests
 ├── go.mod                       # Go module definition
-├── go.sum                       # Go module checksums
-└── README-GO.md                 # This file
+├── Makefile                     # Build automation
+└── VERSION                      # Version file
 ```
+
+### Key Features
+
+1. **Automatic yt-dlp Installation**: If yt-dlp is not found, the program automatically installs it using pip
+2. **Concurrent Remote Copying**: Files are copied to all configured remotes simultaneously using goroutines
+3. **Better Separation of Concerns**: Each package has a single, well-defined responsibility
+4. **Comprehensive Testing**: Unit tests for all packages with good coverage
+5. **Type Safety**: Go's static typing catches errors at compile time
+6. **Better Error Handling**: Explicit error returns and proper error propagation
+7. **No Python Dependencies**: Standalone binary with no runtime dependencies (except yt-dlp)
+8. **Improved CLI**: More intuitive flag parsing and help messages
+9. **Verbose Mode**: New `-v`/`--verbose` flag for debugging with full Python stack traces
 
 ## Testing
 
-Run all tests:
-
 ```bash
+# Run all tests
 go test ./...
-```
 
-Run tests for a specific package:
-
-```bash
+# Run tests for a specific package
 go test ./pkg/config
 go test ./pkg/downloader
-go test ./pkg/remote
-go test ./pkg/util
-```
 
-Run tests with verbose output:
-
-```bash
+# Run tests with verbose output
 go test -v ./...
-```
 
-Run tests with coverage:
-
-```bash
+# Run tests with coverage
 go test -cover ./...
+
+# Run tests with race detector
+go test -race ./...
 ```
 
-Note: Some integration tests are skipped by default as they require yt-dlp, network access, or specific system configuration. To run integration tests manually, remove the `t.Skip()` calls in the test files.
-
-## Architecture
-
-### Modular Design
-
-The Go implementation is significantly more modular than the Python version:
-
-1. **Config Package**: Handles all configuration file parsing and environment variable expansion
-2. **Downloader Package**: Manages yt-dlp interaction and media file downloading
-3. **Remote Package**: Handles copying files to remote destinations (SCP and Samba)
-4. **Util Package**: Provides utility functions for WSL detection, command execution, and file operations
-
-### Key Improvements over Python Version
-
-1. **Better separation of concerns**: Each package has a single, well-defined responsibility
-2. **Comprehensive testing**: Unit tests for all packages with good coverage
-3. **Type safety**: Go's static typing catches errors at compile time
-4. **Better error handling**: Explicit error returns and proper error propagation
-5. **No Python dependencies**: Standalone binary with no runtime dependencies
-6. **Improved CLI**: More intuitive flag parsing and help messages
-7. **Verbose mode**: New `-v`/`--verbose` flag for debugging
+**Note:** Some integration tests are skipped by default as they require yt-dlp, network access, or specific system configuration.
 
 ## Differences from Python Version
 
@@ -253,23 +261,33 @@ The Go implementation is significantly more modular than the Python version:
    - New `-v`/`--verbose` flag for debugging output
    - Python's `-d` (debug) is now an alias for `-v` (verbose)
 
-2. **Error handling**: More robust error checking and reporting
+2. **Automatic yt-dlp installation**: The Go version installs yt-dlp if not found
 
-3. **Configuration**: Same YAML format, fully compatible
+3. **Concurrent copying**: Remote copies happen in parallel for better performance
 
-4. **No colorama dependency**: Uses standard output (colors can be added later if needed)
+4. **Error handling**: More robust error checking and reporting with full stack traces in verbose mode
 
-5. **Cleaner code structure**: Better organized with clear package boundaries
+5. **Configuration**: Same YAML format, fully compatible with Python version
+
+6. **Cleaner code structure**: Better organized with clear package boundaries
 
 ## Troubleshooting
 
 ### yt-dlp not found
 
+If yt-dlp is not installed, the program will automatically install it:
+
 ```
-Error: yt-dlp not found: please install it
+yt-dlp not found. Installing yt-dlp using pip...
+[pip installation output]
+yt-dlp installed successfully!
 ```
 
-Install yt-dlp: `pip install yt-dlp` or download from [yt-dlp releases](https://github.com/yt-dlp/yt-dlp/releases)
+If automatic installation fails, install manually:
+```bash
+pip install yt-dlp
+# Or download from: https://github.com/yt-dlp/yt-dlp/releases
+```
 
 ### Config file not found
 
@@ -277,7 +295,7 @@ Install yt-dlp: `pip install yt-dlp` or download from [yt-dlp releases](https://
 Error loading config: failed to read config file
 ```
 
-Create `~/dl.config` or specify a different path with `-c`
+**Solution:** Create `~/dl.config` or specify a different path with `-c`
 
 ### Permission denied (Samba)
 
@@ -285,7 +303,7 @@ Create `~/dl.config` or specify a different path with `-c`
 failed to mount: command failed
 ```
 
-Samba mounting requires sudo privileges on WSL. Run with appropriate permissions or use SCP method instead.
+**Solution:** Samba mounting requires sudo privileges on WSL. Ensure your user has sudo access, or use SCP method instead.
 
 ### Remote copy failed
 
@@ -293,72 +311,85 @@ Samba mounting requires sudo privileges on WSL. Run with appropriate permissions
 Warning: failed to copy to remote
 ```
 
-Check that:
+**Check:**
 - Remote host is accessible via SSH (for SCP)
 - SSH keys are configured for password-less login
 - Remote directories exist and are writable
 - For Samba: WSL is running and mount point is accessible
+- For Samba: Remote name is just the hostname, not `username@hostname`
+
+### Verbose mode shows Python errors
+
+When using `-v`, you may see detailed Python output from yt-dlp. This is intentional and helps diagnose issues.
+
+Example:
+```
+[debug] Command-line config: ['--dump-json', '--no-playlist', '--verbose', 'URL']
+[debug] Python 3.13.3 (CPython x86_64 64bit)
+ERROR: [XHamster] Unknown algorithm ID: 5
+```
+
+This detailed output helps identify problems with specific extractors or sites.
 
 ## Building for Different Platforms
 
 ```bash
 # Linux (current platform)
-go build -o dl ./cmd/dl
+make build
 
-# macOS
+# Build for all platforms
+make build-all
+
+# Manual cross-compilation
 GOOS=darwin GOARCH=amd64 go build -o dl-mac ./cmd/dl
-
-# Windows
 GOOS=windows GOARCH=amd64 go build -o dl.exe ./cmd/dl
-
-# Linux ARM (Raspberry Pi, etc.)
 GOOS=linux GOARCH=arm64 go build -o dl-arm64 ./cmd/dl
 ```
 
-## Contributing
+## Development
 
-Contributions are welcome! Please ensure:
+### Build and Install Locally
 
-1. All tests pass: `go test ./...`
-2. Code is formatted: `go fmt ./...`
-3. No linting errors: `golint ./...` (if installed)
-4. Add tests for new features
+```bash
+# Format code
+make fmt
 
-## License
+# Run linter
+make vet
 
-Same license as the original Python version.
+# Run tests
+make test
 
-## Version Management
+# Build
+make build
 
-The version number is stored in the `VERSION` file at the root of the project. The build process injects this version into the binary at compile time using Go's `-ldflags` with `-X main.version=$(VERSION)`.
+# Install to system path
+sudo make install
+```
 
-### Manual Version Update
+### Version Management
 
-To update the version manually:
+The version number is stored in the `VERSION` file at the root of the project. The build process injects this version into the binary at compile time.
+
+To update the version:
+
 1. Edit the `VERSION` file
 2. Update `CHANGELOG.md` with your changes
 3. Rebuild: `make build`
 
-The Makefile automatically reads the VERSION file and passes it to the build:
-```bash
-go build -ldflags "-X main.version=$(VERSION)" -o dl ./cmd/dl
-```
-
-You can check the current version with:
+Check the current version:
 ```bash
 make version
 # Or after building:
 ./dl -h
 ```
 
-### Release Tool (Developers Only)
+### Release Process (Maintainers Only)
 
-**Note:** The release tool is for project maintainers only. End users should install dl using `go install` (see Installation section above).
-
-For developers releasing a new version, use the provided Go-based release tool:
+Use the provided release tool:
 
 ```bash
-# First, build the release tool
+# Build the release tool
 make build-release-tool
 
 # Interactive release (prompts for version)
@@ -367,41 +398,45 @@ make build-release-tool
 # Release with specific version
 ./release 2.1.0
 
-# Skip tests during release
-./release -s 2.1.0
-
-# Debug mode
-./release -d 2.1.0
-
-# Help
+# See all options
 ./release -h
 ```
 
-The release script will:
-1. Validate the version format (semantic versioning)
-2. Check you're on the correct branch (main/master/golang)
-3. Ensure working directory is clean
-4. Verify the tag doesn't already exist
-5. Check that CHANGELOG.md mentions the new version
-6. Run tests (unless `-s` is specified)
-7. Update the VERSION file
-8. Rebuild the binary with the new version
-9. Commit and push the VERSION file change
-10. Build binaries for all platforms
-11. Create and push a git tag
-12. Display next steps for GitHub release
+The release script automates:
+- Version validation
+- Running tests
+- Updating VERSION file
+- Building binaries for all platforms
+- Creating and pushing git tags
+- Preparing GitHub release
 
-This automates the entire release process and ensures consistency.
+## Contributing
+
+Contributions are welcome! Please ensure:
+
+1. All tests pass: `make test`
+2. Code is formatted: `make fmt`
+3. No linting errors: `make vet`
+4. Add tests for new features
+5. Update documentation
+
+## License
+
+The program is available as open source under the terms of the MIT License.
+
+## Additional Information
+
+- [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp)
+- [GitHub repository](https://github.com/mslinn/dl)
 
 ## Version History
 
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+
 - **2.0.0** - Initial Go implementation with modular architecture
-- Added comprehensive unit tests
-- Added `-v`/`--verbose` flag
-- Improved error handling and reporting
-- Version number stored in VERSION file
-
-## See Also
-
-- [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp)
-- [Original Python version](README.md)
+  - Added automatic yt-dlp installation
+  - Added concurrent remote copying
+  - Added comprehensive unit tests
+  - Added `-v`/`--verbose` flag with full stack traces
+  - Improved error handling and reporting
+  - Version number stored in VERSION file
