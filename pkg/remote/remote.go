@@ -3,6 +3,7 @@ package remote
 import (
 	"fmt"
 	"path/filepath"
+	"sync"
 
 	"dl/pkg/config"
 	"dl/pkg/util"
@@ -31,7 +32,7 @@ func New(cfg *config.Config, verbose bool) *Copier {
 	}
 }
 
-// CopyToRemotes copies a file to all active remote destinations
+// CopyToRemotes copies a file to all active remote destinations concurrently
 func (c *Copier) CopyToRemotes(localPath string, purpose Purpose) error {
 	if len(c.cfg.ActiveRemotes) == 0 {
 		if c.verbose {
@@ -40,13 +41,28 @@ func (c *Copier) CopyToRemotes(localPath string, purpose Purpose) error {
 		return nil
 	}
 
+	// Use WaitGroup to wait for all goroutines to complete
+	var wg sync.WaitGroup
+	// Use mutex to protect the errors slice
+	var mu sync.Mutex
 	var errors []error
+
+	// Launch a goroutine for each remote destination
 	for remoteName, remote := range c.cfg.ActiveRemotes {
-		if err := c.copyToRemote(localPath, remoteName, remote, purpose); err != nil {
-			fmt.Printf("Warning: failed to copy to %s: %v\n", remoteName, err)
-			errors = append(errors, err)
-		}
+		wg.Add(1)
+		go func(name string, r *config.Remote) {
+			defer wg.Done()
+			if err := c.copyToRemote(localPath, name, r, purpose); err != nil {
+				fmt.Printf("Warning: failed to copy to %s: %v\n", name, err)
+				mu.Lock()
+				errors = append(errors, err)
+				mu.Unlock()
+			}
+		}(remoteName, remote)
 	}
+
+	// Wait for all copies to complete
+	wg.Wait()
 
 	// Return error only if all copies failed
 	if len(errors) == len(c.cfg.ActiveRemotes) && len(errors) > 0 {
