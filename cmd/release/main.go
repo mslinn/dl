@@ -365,15 +365,27 @@ func runGoReleaser(version string, debug bool) {
 		success("Found GITHUB_TOKEN environment variable")
 	}
 
-	// Check if goreleaser is installed
+	// Check if goreleaser is installed and version
 	info("Checking for goreleaser...")
-	if _, err := runCommand("goreleaser", "--version"); err != nil {
-		info("Installing goreleaser...")
-		if err := runCommandVerbose("go", "install", "github.com/goreleaser/goreleaser@latest"); err != nil {
-			errorExit("Failed to install goreleaser")
+	needsInstall := false
+	output, err := runCommand("goreleaser", "--version")
+	if err != nil {
+		needsInstall = true
+	} else {
+		// Check if it's v2 or later
+		if !strings.Contains(output, "goreleaser version v2") && !strings.Contains(output, "goreleaser version 2") {
+			warning("Found older version of goreleaser, upgrading to v2...")
+			needsInstall = true
 		}
 	}
-	success("goreleaser is available")
+
+	if needsInstall {
+		info("Installing goreleaser v2...")
+		if err := runCommandVerbose("go", "install", "github.com/goreleaser/goreleaser/v2@latest"); err != nil {
+			errorExit("Failed to install goreleaser v2")
+		}
+	}
+	success("goreleaser v2 is available")
 
 	// Run goreleaser
 	fmt.Println()

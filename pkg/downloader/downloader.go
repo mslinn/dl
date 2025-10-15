@@ -104,6 +104,13 @@ func (d *Downloader) Download() (string, error) {
 		return "", err
 	}
 
+	// Check for ffmpeg if downloading audio
+	if d.opts.MediaType == MP3 {
+		if err := CheckFfmpeg(); err != nil {
+			return "", err
+		}
+	}
+
 	var outputPath string
 	var args []string
 
@@ -169,6 +176,27 @@ func (d *Downloader) Download() (string, error) {
 	}
 
 	return actualPath, nil
+}
+
+// CheckFfmpeg verifies that ffmpeg is installed and accessible
+// If not found, provides installation instructions
+func CheckFfmpeg() error {
+	// Check if ffmpeg is already installed
+	cmd := exec.Command("ffmpeg", "-version")
+	if err := cmd.Run(); err == nil {
+		return nil // ffmpeg is already installed
+	}
+
+	// ffmpeg not found, provide installation instructions
+	fmt.Println("ffmpeg not found. ffmpeg is required for audio extraction.")
+	fmt.Println()
+	fmt.Println("Installation instructions:")
+	fmt.Println("  Ubuntu/Debian: sudo apt-get install ffmpeg")
+	fmt.Println("  macOS:         brew install ffmpeg")
+	fmt.Println("  Windows:       Download from https://ffmpeg.org/download.html")
+	fmt.Println()
+
+	return fmt.Errorf("ffmpeg is not installed")
 }
 
 // CheckYtDlp verifies that yt-dlp is installed and accessible

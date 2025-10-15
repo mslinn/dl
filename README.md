@@ -9,7 +9,7 @@ Uses Samba and `scp` to copy downloaded media to other computers.
 ## Features
 
 - Download audio (MP3) or video (MP4) from supported websites
-- Automatic installation of `yt-dlp `if not found
+- Automatic installation of `yt-dlp` if not found
 - Automatic sanitization of filenames
 - **Concurrent copying** to multiple remote destinations for faster performance
 - Support for SCP and Samba/CIFS protocols
@@ -21,8 +21,8 @@ Uses Samba and `scp` to copy downloaded media to other computers.
 ## Requirements
 
 - Go 1.21 or higher
-- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) - automatically installed if not found
-- For audio extraction: `ffmpeg`
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) - **automatically installed** if not found
+- `ffmpeg` - **automatically checked** with installation instructions if not found (required for audio extraction)
 - For remote copying:
   - SSH access for SCP method
   - Samba/CIFS support for Windows shares (WSL)
@@ -245,7 +245,7 @@ dl/
 
 ### `yt-dlp` not found
 
-If `yt-dlp `is not installed, the program will automatically install it:
+The program automatically installs `yt-dlp` if not found:
 
 ```text
 yt-dlp not found. Installing yt-dlp using pip...
@@ -256,9 +256,24 @@ yt-dlp installed successfully!
 If automatic installation fails, install manually:
 
 ```bash
-$ pip install yt-dlp
+pip install yt-dlp
 # Or download from: https://github.com/yt-dlp/yt-dlp/releases
 ```
+
+### `ffmpeg` not found
+
+When downloading audio (MP3), the program checks for `ffmpeg` and provides platform-specific installation instructions:
+
+```text
+ffmpeg not found. ffmpeg is required for audio extraction.
+
+Installation instructions:
+  Ubuntu/Debian: sudo apt-get install ffmpeg
+  macOS:         brew install ffmpeg
+  Windows:       Download from https://ffmpeg.org/download.html
+```
+
+Follow the appropriate command for your platform to install ffmpeg.
 
 ### Config file not found
 
