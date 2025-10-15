@@ -107,6 +107,11 @@ func IsMountPoint(path string) bool {
 // SambaParse parses Windows-style paths (e.g., "c:/path/to/file")
 // Returns the drive letter and the path
 func SambaParse(winPath string) (string, string, error) {
+	// Check for multiple colons (invalid Windows path)
+	if strings.Count(winPath, ":") != 1 {
+		return "", "", fmt.Errorf("invalid Windows path '%s': must contain exactly one colon", winPath)
+	}
+
 	parts := strings.SplitN(winPath, ":", 2)
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("invalid Windows path '%s': expected format 'drive:/path'", winPath)

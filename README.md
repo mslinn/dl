@@ -1,4 +1,6 @@
-# dl - A Command-Line Interface to yt-dlp for Downloading Files
+# `dl` [![GitHub newest release](https://img.shields.io/github/v/release/mslinn/dl)](https://github.com/mslinn/dl/releases/latest)
+
+A Command-Line Interface to `yt-dlp` for Downloading Files
 
 Download videos and mp3s from many websites.
 Uses Samba and `scp` to copy downloaded media to other computers.
