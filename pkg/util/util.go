@@ -6,9 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 // IsWSL detects if the program is running under WSL
@@ -80,28 +78,6 @@ func SambaMount(remoteNode, remoteDrive string, verbose bool) (string, error) {
 	}
 
 	return mountPoint, nil
-}
-
-// IsMountPoint checks if a path is a mount point
-func IsMountPoint(path string) bool {
-	// Get stat info for the path
-	pathStat, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-
-	// Get stat info for the parent
-	parentPath := filepath.Dir(path)
-	parentStat, err := os.Stat(parentPath)
-	if err != nil {
-		return false
-	}
-
-	// If the device IDs are different, it's a mount point
-	pathDev := pathStat.Sys().(*syscall.Stat_t).Dev
-	parentDev := parentStat.Sys().(*syscall.Stat_t).Dev
-
-	return pathDev != parentDev
 }
 
 // SambaParse parses Windows-style paths (e.g., "c:/path/to/file")
