@@ -1,6 +1,7 @@
 .PHONY: build test clean install run help version
 
 BINARY_NAME=dl
+BIN_DIR=bin
 INSTALL_PATH=/usr/local/bin
 VERSION=$(shell cat VERSION)
 
@@ -12,8 +13,9 @@ help: ## Show this help message
 
 build: ## Build the binary
 	@echo "Building $(BINARY_NAME)..."
-	go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME) ./cmd/dl
-	@echo "Build complete: ./$(BINARY_NAME)"
+	@mkdir -p $(BIN_DIR)
+	go build -ldflags "-X main.version=$(VERSION)" -o $(BIN_DIR)/$(BINARY_NAME) ./cmd/dl
+	@echo "Build complete: $(BIN_DIR)/$(BINARY_NAME)"
 
 build-release-tool: ## Build the release tool (developers only)
 	@echo "Building release tool (for developers)..."

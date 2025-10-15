@@ -1,0 +1,98 @@
+# GoReleaser configuration for dl
+# See https://goreleaser.com for documentation
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: dl
+    main: ./cmd/dl
+    binary: dl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: dl-archive
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: 'Enhancements'
+      regexp: '^.*?(enhance|improvement)(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: mslinn
+    name: dl
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Release {{ .Tag }}
+
+    Download the appropriate binary for your platform below.
+  footer: |
+    ## Installation
+
+    ### Quick Install
+    ```bash
+    go install github.com/mslinn/dl/cmd/dl@{{ .Tag }}
+    ```
+
+    ### Manual Install
+    Download the binary for your platform and add it to your PATH.
+
+    ---
+
+    **Full Changelog**: https://github.com/mslinn/dl/compare/{{ .PreviousTag }}...{{ .Tag }}

@@ -85,8 +85,8 @@ make build
 $ make build # Build for current platform
 
 
-# The binary will be created as ./dl
-./dl -h
+# The binary will be created in bin/dl
+bin/dl -h
 ```
 
 

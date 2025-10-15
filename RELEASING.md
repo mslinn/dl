@@ -7,10 +7,13 @@ This document describes the release process for the `dl` project. This is intend
 Before creating a release, ensure:
 
 1. **Write access** to the repository
-2. **All tests pass**: Run `make test` and verify all tests succeed
-3. **Master branch is up to date**: `git pull origin master`
-4. **CHANGELOG.md is updated** with all changes for this release
-5. **VERSION file** reflects the correct version number (optional - the tool will update it)
+2. **GitHub authentication** is configured:
+   - Set `GITHUB_TOKEN` environment variable, OR
+   - Run `gh auth login` to authenticate with GitHub CLI
+3. **All tests pass**: Run `make test` and verify all tests succeed
+4. **Master branch is up to date**: `git pull origin master`
+5. **CHANGELOG.md is updated** with all changes for this release
+6. **VERSION file** reflects the correct version number (optional - the tool will update it)
 
 **Note:** If you have uncommitted changes, the release tool will automatically prompt you for a commit message, then add, commit, and push all changes before continuing with the release.
 
@@ -70,17 +73,20 @@ The release tool automates:
 5. **Changelog Validation**: Checks that CHANGELOG.md mentions the new version
 6. **Test Execution**: Runs `make test` to ensure all tests pass (can be skipped with `-s`)
 7. **VERSION File Update**: Updates the VERSION file with the new version number
-8. **Cross-Platform Builds**: Builds binaries for all supported platforms:
-   - Linux (amd64, arm64)
-   - macOS (amd64, arm64)
-   - Windows (amd64)
-9. **Git Tagging**: Creates an annotated git tag (e.g., `v2.1.0`)
-10. **Push to Remote**: Pushes the tag to the remote repository
-11. **Release Preparation**: Lists the artifacts ready for GitHub release
+8. **Git Tagging**: Creates an annotated git tag (e.g., `v2.1.0`)
+9. **Push Tag**: Pushes the tag to the remote repository
+10. **GitHub Authentication**: Verifies GITHUB_TOKEN or uses `gh auth token`
+11. **GoReleaser Installation**: Checks for and installs goreleaser if needed
+12. **Build & Release**: Runs GoReleaser to:
+    - Build binaries for all platforms (Linux, macOS, Windows on amd64 and arm64)
+    - Create GitHub release with changelog
+    - Upload all binaries and checksums
+    - Generate release notes from git commits
+13. **Completion**: Displays the release URL
 
-### Method 2: Manual Release Process
+### Method 2: Manual Release with GoReleaser
 
-If you prefer manual control or need to troubleshoot, follow these steps:
+If you prefer manual control or need to troubleshoot:
 
 #### 1. Update Version and Changelog
 
@@ -94,6 +100,7 @@ vim CHANGELOG.md
 # Commit the changes
 git add VERSION CHANGELOG.md
 git commit -m "Prepare release v2.1.0"
+git push origin master
 ```
 
 #### 2. Run Tests
@@ -104,44 +111,33 @@ make test
 
 Ensure all tests pass before proceeding.
 
-#### 3. Build for All Platforms
-
-```bash
-make build-all
-```
-
-This creates binaries for:
-- `dl-linux-amd64`
-- `dl-linux-arm64`
-- `dl-darwin-amd64`
-- `dl-darwin-arm64`
-- `dl-windows-amd64.exe`
-
-#### 4. Create and Push Git Tag
+#### 3. Create and Push Git Tag
 
 ```bash
 # Create annotated tag
 git tag -a v2.1.0 -m "Release version 2.1.0"
 
-# Push commits and tag to remote
-git push origin master
+# Push tag to remote
 git push origin v2.1.0
 ```
 
-#### 5. Create GitHub Release
+#### 4. Run GoReleaser
 
-1. Go to the [Releases page](https://github.com/mslinn/dl/releases)
-2. Click **"Draft a new release"**
-3. Select the tag you just pushed (`v2.1.0`)
-4. Set the release title (e.g., "v2.1.0")
-5. Copy the relevant section from CHANGELOG.md to the release description
-6. Attach the built binaries:
-   - `dl-linux-amd64`
-   - `dl-linux-arm64`
-   - `dl-darwin-amd64`
-   - `dl-darwin-arm64`
-   - `dl-windows-amd64.exe`
-7. Click **"Publish release"**
+```bash
+# Set GITHUB_TOKEN (if not already set)
+export GITHUB_TOKEN=$(gh auth token)
+
+# Run goreleaser
+goreleaser release --clean
+```
+
+GoReleaser will:
+- Build binaries for all platforms
+- Create archives (tar.gz for Unix, zip for Windows)
+- Generate checksums
+- Create GitHub release
+- Upload all artifacts
+- Generate release notes from commits
 
 ## Supported Platforms
 
@@ -253,6 +249,45 @@ vim CHANGELOG.md
 ```
 
 ## Troubleshooting
+
+### GitHub Authentication Fails
+
+**Problem**: `Failed to get GitHub token` error
+
+**Solutions**:
+1. Set GITHUB_TOKEN environment variable:
+   ```bash
+   export GITHUB_TOKEN=ghp_your_token_here
+   ```
+2. Or authenticate with GitHub CLI:
+   ```bash
+   gh auth login
+   ```
+3. Create a personal access token at https://github.com/settings/tokens with `repo` scope
+
+### GoReleaser Not Found
+
+**Problem**: `goreleaser: command not found`
+
+**Solution**: Install goreleaser:
+```bash
+go install github.com/goreleaser/goreleaser@latest
+```
+
+### GoReleaser Build Fails
+
+**Problem**: GoReleaser reports build errors
+
+**Solutions**:
+1. Check `.goreleaser.yml` configuration is valid:
+   ```bash
+   goreleaser check
+   ```
+2. Test the build locally without publishing:
+   ```bash
+   goreleaser build --snapshot --clean
+   ```
+3. Check Go version compatibility (requires 1.21+)
 
 ### Tests Fail During Release
 

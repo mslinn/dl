@@ -2,6 +2,8 @@
 *.swp
 .claude
 /release
+/bin/
+/dist/
 .idea*
 *.iml
 *.tmp

@@ -80,24 +80,25 @@ func main() {
 	// Confirmation
 	fmt.Println()
 	warning(fmt.Sprintf("Ready to create release v%s", version))
-	if !confirm("Proceed with release?") {
+	if !confirmDefault("Proceed with release?", true) {
 		errorExit("Release cancelled")
 	}
-
-	// Build release binaries
-	buildReleases(version)
 
 	// Create and push tag
 	createTag(version, opts.debug)
 
+	// Run GoReleaser to create GitHub release and upload binaries
+	runGoReleaser(version, opts.debug)
+
 	fmt.Println()
 	success(fmt.Sprintf("Release v%s completed successfully!", version))
 	fmt.Println()
-	info("Next steps:")
-	fmt.Println("  1. Create a GitHub release at https://github.com/[your-repo]/releases/new")
-	fmt.Println("  2. Upload the release binaries (dl-*)")
-	fmt.Println("  3. Copy relevant CHANGELOG.md entries to the release notes")
-	fmt.Println("  4. Announce the release")
+
+	// Display release URL
+	repoURL, err := getRepoURL()
+	if err == nil && repoURL != "" {
+		info(fmt.Sprintf("View release at: https://github.com/%s/releases/tag/v%s", repoURL, version))
+	}
 	fmt.Println()
 }
 
@@ -346,20 +347,62 @@ func updateVersionFiles(version string) {
 	success("VERSION file committed and pushed")
 }
 
-func buildReleases(version string) {
-	info("Building release binaries for all platforms...")
+func runGoReleaser(version string, debug bool) {
+	// Check for GITHUB_TOKEN
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		warning("GITHUB_TOKEN environment variable not set")
+		info("Attempting to use GitHub CLI (gh) for authentication...")
 
-	err := runCommandVerbose("make", "build-all")
-	if err != nil {
-		warning("Could not build for all platforms (make build-all failed)")
-		return
+		// Try to get token from gh
+		ghToken, err := runCommand("gh", "auth", "token")
+		if err != nil || ghToken == "" {
+			errorExit("Failed to get GitHub token. Please set GITHUB_TOKEN or run 'gh auth login'")
+		}
+		os.Setenv("GITHUB_TOKEN", ghToken)
+		success("Using GitHub CLI token")
+	} else {
+		success("Found GITHUB_TOKEN environment variable")
 	}
 
-	success("Built binaries for all platforms")
+	// Check if goreleaser is installed
+	info("Checking for goreleaser...")
+	if _, err := runCommand("goreleaser", "--version"); err != nil {
+		info("Installing goreleaser...")
+		if err := runCommandVerbose("go", "install", "github.com/goreleaser/goreleaser@latest"); err != nil {
+			errorExit("Failed to install goreleaser")
+		}
+	}
+	success("goreleaser is available")
+
+	// Run goreleaser
 	fmt.Println()
-	info("Release artifacts:")
-	runCommandVerbose("ls", "-lh", "dl-linux-amd64", "dl-linux-arm64",
-		"dl-darwin-amd64", "dl-darwin-arm64", "dl-windows-amd64.exe")
+	info("Running goreleaser to create GitHub release...")
+
+	args := []string{"release", "--clean"}
+	if debug {
+		args = append(args, "--debug")
+	}
+
+	if err := runCommandVerbose("goreleaser", args...); err != nil {
+		errorExit("goreleaser failed. The tag has been pushed but the release was not created.")
+	}
+
+	success("GitHub release created with binaries uploaded")
+}
+
+func getRepoURL() (string, error) {
+	repoURL, err := runCommand("git", "config", "--get", "remote.origin.url")
+	if err != nil {
+		return "", err
+	}
+
+	// Extract repo path from git URL
+	repoURL = strings.TrimSuffix(repoURL, ".git")
+	repoURL = strings.TrimPrefix(repoURL, "git@github.com:")
+	repoURL = strings.TrimPrefix(repoURL, "https://github.com/")
+
+	return repoURL, nil
 }
 
 func createTag(version string, debug bool) {
@@ -382,18 +425,6 @@ func createTag(version string, debug bool) {
 		errorExit("Failed to push tag")
 	}
 	success("Tag pushed to origin")
-
-	fmt.Println()
-	repoURL, err := runCommand("git", "config", "--get", "remote.origin.url")
-	if err == nil {
-		// Extract repo path from git URL
-		repoURL = strings.TrimSuffix(repoURL, ".git")
-		repoURL = strings.TrimPrefix(repoURL, "git@github.com:")
-		repoURL = strings.TrimPrefix(repoURL, "https://github.com/")
-		if repoURL != "" {
-			info(fmt.Sprintf("View release at: https://github.com/%s/releases/tag/%s", repoURL, tag))
-		}
-	}
 }
 
 func showCurrentVersion() {
@@ -423,9 +454,25 @@ func promptVersion(defaultVersion string) string {
 }
 
 func confirm(prompt string) bool {
+	return confirmDefault(prompt, false)
+}
+
+func confirmDefault(prompt string, defaultYes bool) bool {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("%s (y/N) ", prompt)
+
+	suffix := "(y/N)"
+	if defaultYes {
+		suffix = "(Y/n)"
+	}
+
+	fmt.Printf("%s %s ", prompt, suffix)
 	response, _ := reader.ReadString('\n')
 	response = strings.ToLower(strings.TrimSpace(response))
+
+	// If empty response, use default
+	if response == "" {
+		return defaultYes
+	}
+
 	return response == "y" || response == "yes"
 }
