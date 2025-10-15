@@ -10,14 +10,16 @@ Before creating a release, ensure:
 2. **All tests pass**: Run `make test` and verify all tests succeed
 3. **Master branch is up to date**: `git pull origin master`
 4. **CHANGELOG.md is updated** with all changes for this release
-5. **VERSION file** reflects the correct version number
-6. **No uncommitted changes**: `git status` should show a clean working tree
+5. **VERSION file** reflects the correct version number (optional - the tool will update it)
+
+**Note:** If you have uncommitted changes, the release tool will automatically prompt you for a commit message, then add, commit, and push all changes before continuing with the release.
 
 ## Creating a Release
 
 ### Method 1: Using the Release Tool (Recommended)
 
 The project includes a dedicated release tool that automates most of the process.
+
 
 #### Build the Release Tool
 
@@ -34,6 +36,13 @@ This creates a `./release` executable in the project root.
 ./release
 ```
 
+The tool will prompt you for a version number and suggest a default. The default version is determined by:
+1. Taking the most recent git tag and incrementing the patch version
+2. Reading the VERSION file (if it exists)
+3. Comparing the two versions and using the newer one as the default
+
+**Example:** If your latest git tag is `v2.0.5` and your VERSION file contains `2.1.0`, the tool will suggest `2.1.0` as the default (since it's newer than the incremented `2.0.6`).
+
 **Specify Version:**
 ```bash
 ./release 2.1.0
@@ -49,15 +58,25 @@ This creates a `./release` executable in the project root.
 The release tool automates:
 
 1. **Version Validation**: Ensures the version follows semantic versioning (e.g., 2.1.0)
-2. **Test Execution**: Runs `make test` to ensure all tests pass
-3. **VERSION File Update**: Updates the VERSION file with the new version number
-4. **Cross-Platform Builds**: Builds binaries for all supported platforms:
+2. **Branch Check**: Verifies you're on main/master/golang branch
+3. **Uncommitted Changes Handling**: If there are uncommitted changes:
+   - Shows you what files have changed
+   - Prompts for a commit message (default: "Pre-release commit")
+   - Automatically runs `git add -A`
+   - Commits with your message
+   - Pushes to remote
+   - Continues with the release
+4. **Tag Check**: Ensures the version tag doesn't already exist
+5. **Changelog Validation**: Checks that CHANGELOG.md mentions the new version
+6. **Test Execution**: Runs `make test` to ensure all tests pass (can be skipped with `-s`)
+7. **VERSION File Update**: Updates the VERSION file with the new version number
+8. **Cross-Platform Builds**: Builds binaries for all supported platforms:
    - Linux (amd64, arm64)
    - macOS (amd64, arm64)
    - Windows (amd64)
-5. **Git Tagging**: Creates an annotated git tag (e.g., `v2.1.0`)
-6. **Push to Remote**: Pushes the tag and commits to the remote repository
-7. **Release Preparation**: Prepares artifacts for GitHub release
+9. **Git Tagging**: Creates an annotated git tag (e.g., `v2.1.0`)
+10. **Push to Remote**: Pushes the tag to the remote repository
+11. **Release Preparation**: Lists the artifacts ready for GitHub release
 
 ### Method 2: Manual Release Process
 

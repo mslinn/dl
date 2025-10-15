@@ -148,21 +148,58 @@ func runCommandVerbose(name string, args ...string) error {
 }
 
 func getNextVersion() string {
+	// Get version from git tags and increment
 	output, err := runCommand("git", "describe", "--tags", "--abbrev=0")
+	incrementedVersion := "2.0.0"
+	if err == nil {
+		latestTag := strings.TrimPrefix(output, "v")
+		parts := strings.Split(latestTag, ".")
+		if len(parts) == 3 {
+			// Increment patch version
+			var major, minor, patch int
+			fmt.Sscanf(latestTag, "%d.%d.%d", &major, &minor, &patch)
+			incrementedVersion = fmt.Sprintf("%d.%d.%d", major, minor, patch+1)
+		}
+	}
+
+	// Read VERSION file
+	versionFileContent, err := os.ReadFile("VERSION")
 	if err != nil {
-		return "2.0.0"
+		// VERSION file doesn't exist, use incremented version
+		return incrementedVersion
 	}
 
-	latestTag := strings.TrimPrefix(output, "v")
-	parts := strings.Split(latestTag, ".")
-	if len(parts) != 3 {
-		return "2.0.0"
+	versionFileVersion := strings.TrimSpace(string(versionFileContent))
+
+	// Validate VERSION file format
+	if err := validateVersion(versionFileVersion); err != nil {
+		// Invalid format in VERSION file, use incremented version
+		return incrementedVersion
 	}
 
-	// Increment patch version
-	var major, minor, patch int
-	fmt.Sscanf(latestTag, "%d.%d.%d", &major, &minor, &patch)
-	return fmt.Sprintf("%d.%d.%d", major, minor, patch+1)
+	// Compare versions and return the newer one
+	if isNewerVersion(versionFileVersion, incrementedVersion) {
+		return versionFileVersion
+	}
+
+	return incrementedVersion
+}
+
+// isNewerVersion returns true if v1 is newer than v2
+func isNewerVersion(v1, v2 string) bool {
+	var major1, minor1, patch1 int
+	var major2, minor2, patch2 int
+
+	fmt.Sscanf(v1, "%d.%d.%d", &major1, &minor1, &patch1)
+	fmt.Sscanf(v2, "%d.%d.%d", &major2, &minor2, &patch2)
+
+	if major1 != major2 {
+		return major1 > major2
+	}
+	if minor1 != minor2 {
+		return minor1 > minor2
+	}
+	return patch1 > patch2
 }
 
 func validateVersion(version string) error {
@@ -203,26 +240,31 @@ func checkClean() {
 		warning("Working directory is not clean.")
 		fmt.Println(output)
 		fmt.Println()
-		if confirm("Commit all changes before release?") {
-			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Commit message: ")
-			commitMsg, _ := reader.ReadString('\n')
-			commitMsg = strings.TrimSpace(commitMsg)
-			if commitMsg == "" {
-				commitMsg = "Pre-release commit"
-			}
 
-			runCommandVerbose("git", "add", "-A")
-			if err := runCommandVerbose("git", "commit", "-m", commitMsg); err != nil {
-				errorExit("Failed to commit changes")
-			}
-			if err := runCommandVerbose("git", "push", "origin"); err != nil {
-				errorExit("Failed to push changes")
-			}
-			success("Changes committed and pushed")
-		} else {
-			errorExit("Please commit or stash changes before releasing")
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Commit message (or press Enter for 'Pre-release commit'): ")
+		commitMsg, _ := reader.ReadString('\n')
+		commitMsg = strings.TrimSpace(commitMsg)
+		if commitMsg == "" {
+			commitMsg = "Pre-release commit"
 		}
+
+		info("Adding all changes...")
+		if err := runCommandVerbose("git", "add", "-A"); err != nil {
+			errorExit("Failed to add changes")
+		}
+
+		info("Committing changes...")
+		if err := runCommandVerbose("git", "commit", "-m", commitMsg); err != nil {
+			errorExit("Failed to commit changes")
+		}
+
+		info("Pushing changes to remote...")
+		if err := runCommandVerbose("git", "push", "origin"); err != nil {
+			errorExit("Failed to push changes")
+		}
+
+		success("Changes committed and pushed")
 	} else {
 		success("Working directory is clean")
 	}

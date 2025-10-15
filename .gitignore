@@ -1,6 +1,7 @@
 *.mp4
 *.swp
 .claude
+release
 .idea*
 *.iml
 *.tmp
