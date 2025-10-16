@@ -9,6 +9,7 @@ import (
 	"dl/pkg/config"
 	"dl/pkg/downloader"
 	"dl/pkg/remote"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -121,10 +122,10 @@ func parseArgs() *Args {
 
 	flag.StringVarP(&args.configPath, "config", "c", "~/dl.config", "Path to configuration file")
 	flag.BoolVarP(&args.debug, "debug", "d", false, "Enable debug mode (alias for verbose)")
-	flag.BoolVarP(&args.verbose, "verbose", "v", false, "Enable verbose output")
 	flag.BoolVarP(&args.keepVideo, "keep-video", "k", false, "Download and keep video")
-	flag.BoolVarP(&args.xrated, "xrated", "x", false, "Download x-rated video to xdest")
+	flag.BoolVarP(&args.verbose, "verbose", "v", false, "Enable verbose output")
 	flag.StringVarP(&args.videoDest, "video-dest", "V", "", "Download video to specified directory")
+	flag.BoolVarP(&args.xrated, "xrated", "x", false, "Download x-rated video to xdest")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "dl - Download videos and audio from various websites\n\n")
@@ -133,7 +134,13 @@ func parseArgs() *Args {
 		fmt.Fprintf(os.Stderr, "Downloads media from URLs using yt-dlp.\n")
 		fmt.Fprintf(os.Stderr, "By default, downloads audio as MP3, unless -k, -x, or -V options are provided.\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
-		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "  -c, --config string       Path to configuration file (default \"~/dl.config\")\n")
+		fmt.Fprintf(os.Stderr, "  -d, --debug               Enable debug mode (alias for verbose)\n")
+		fmt.Fprintf(os.Stderr, "  -h, --help                Display this help message\n")
+		fmt.Fprintf(os.Stderr, "  -k, --keep-video          Download and keep video\n")
+		fmt.Fprintf(os.Stderr, "  -v, --verbose             Enable verbose output\n")
+		fmt.Fprintf(os.Stderr, "  -V, --video-dest string   Download video to specified directory\n")
+		fmt.Fprintf(os.Stderr, "  -x, --xrated              Download x-rated video to xdest\n")
 		fmt.Fprintf(os.Stderr, "\nConfiguration:\n")
 		fmt.Fprintf(os.Stderr, "  Edit ~/dl.config to configure local and remote destinations.\n")
 		fmt.Fprintf(os.Stderr, "  See README-GO.md for configuration details.\n\n")

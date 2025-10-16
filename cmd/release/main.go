@@ -9,12 +9,13 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 )
 
 const (
@@ -32,8 +33,8 @@ type Options struct {
 
 func main() {
 	opts := Options{}
-	flag.BoolVar(&opts.skipTests, "s", false, "Skip running tests")
-	flag.BoolVar(&opts.debug, "d", false, "Debug mode (additional output)")
+	flag.BoolVarP(&opts.skipTests, "skip-tests", "s", false, "Skip running tests")
+	flag.BoolVarP(&opts.debug, "debug", "d", false, "Debug mode (additional output)")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -107,10 +108,9 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "Release a new version of dl\n\n")
 	fmt.Fprintf(os.Stderr, "Usage: release [OPTIONS] [VERSION]\n\n")
 	fmt.Fprintf(os.Stderr, "OPTIONS:\n")
-	fmt.Fprintf(os.Stderr, "  -d    Debug mode (additional output)\n")
-	fmt.Fprintf(os.Stderr, "  -h    Display this help message\n")
-	fmt.Fprintf(os.Stderr, "  -s    Skip running tests\n\n")
-	fmt.Fprintf(os.Stderr, "VERSION: The version to release (e.g., %s)\n", nextVersion)
+	flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, "  -h, --help         Display this help message\n")
+	fmt.Fprintf(os.Stderr, "\nVERSION: The version to release (e.g., %s)\n", nextVersion)
 	os.Exit(0)
 }
 
