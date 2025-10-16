@@ -8,47 +8,44 @@
       "args": [
         "-h"
       ],
-      "console": "integratedTerminal",
-      "justMyCode": true,
+      "mode": "debug",
       "name": "dl help",
-      "program": "src/__main__.py",
+      "program": "${workspaceFolder}/cmd/dl",
       "request": "launch",
-      "type": "python",
+      "type": "go",
     },
     {
       "args": [
         "https://www.youtube.com/watch?v=C0DPdy98e4c"
       ],
-      "console": "integratedTerminal",
-      "justMyCode": true,
+      "mode": "debug",
       "name": "dl audio",
-      "program": "src/__main__.py",
+      "program": "${workspaceFolder}/cmd/dl",
       "request": "launch",
-      "type": "python",
+      "type": "go",
     },
     {
       "args": [
-        "-V", ".",
+        "-V",
+        ".",
         "https://www.youtube.com/watch?v=C0DPdy98e4c"
       ],
-      "console": "integratedTerminal",
-      "justMyCode": true,
+      "mode": "debug",
       "name": "dl video",
-      "program": "src/__main__.py",
+      "program": "${workspaceFolder}/cmd/dl",
       "request": "launch",
-      "type": "python",
+      "type": "go",
     },
     {
       "args": [
         "-x",
         "https://www.youtube.com/watch?v=C0DPdy98e4c"
       ],
-      "console": "integratedTerminal",
-      "justMyCode": true,
+      "mode": "debug",
       "name": "dl -x",
-      "program": "src/__main__.py",
-      "type": "python",
+      "program": "${workspaceFolder}/cmd/dl",
       "request": "launch",
+      "type": "go",
     }
   ]
 }
