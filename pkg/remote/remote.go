@@ -7,6 +7,7 @@ import (
 
 	"dl/pkg/config"
 	"dl/pkg/util"
+	"github.com/fatih/color"
 )
 
 // Purpose defines the type of media being copied
@@ -128,7 +129,7 @@ func (c *Copier) copySamba(localPath, filename, remoteName, remotePath string) e
 	}
 
 	targetPath := filepath.Join(sambaRoot, localPathOnRemote, filename)
-	fmt.Printf("Copying to %s using samba\n", targetPath)
+	color.Cyan("Copying to %s using samba\n", targetPath)
 
 	return util.CopyFile(localPath, targetPath)
 }

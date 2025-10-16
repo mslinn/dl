@@ -1,5 +1,9 @@
 # Change Log
 
+## v2.0.4 2025-10-16
+
+* Now uses `fatih/color` instead of ANSI color
+
 
 ## v2.0.3 2025-10-15
 

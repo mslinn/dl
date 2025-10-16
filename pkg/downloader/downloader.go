@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 // MediaType represents the type of media to download
@@ -188,9 +190,9 @@ func CheckFfmpeg() error {
 	}
 
 	// ffmpeg not found, provide installation instructions
-	fmt.Println("ffmpeg not found. ffmpeg is required for audio extraction.")
+	color.Red("ffmpeg not found. ffmpeg is required for audio extraction.")
 	fmt.Println()
-	fmt.Println("Installation instructions:")
+	color.Yellow("Installation instructions:")
 	fmt.Println("  Ubuntu/Debian: sudo apt-get install ffmpeg")
 	fmt.Println("  macOS:         brew install ffmpeg")
 	fmt.Println("  Windows:       Download from https://ffmpeg.org/download.html")
@@ -209,7 +211,7 @@ func CheckYtDlp() error {
 	}
 
 	// yt-dlp not found, attempt to install it
-	fmt.Println("yt-dlp not found. Installing yt-dlp using pip...")
+	color.Yellow("yt-dlp not found. Installing yt-dlp using pip...")
 
 	// Try pip3 first, then pip
 	installCmd := exec.Command("pip3", "install", "yt-dlp")
@@ -218,7 +220,7 @@ func CheckYtDlp() error {
 
 	if err := installCmd.Run(); err != nil {
 		// Try with pip if pip3 failed
-		fmt.Println("Trying with pip instead of pip3...")
+		color.Yellow("Trying with pip instead of pip3...")
 		installCmd = exec.Command("pip", "install", "yt-dlp")
 		installCmd.Stdout = os.Stdout
 		installCmd.Stderr = os.Stderr
@@ -228,7 +230,7 @@ func CheckYtDlp() error {
 		}
 	}
 
-	fmt.Println("yt-dlp installed successfully!")
+	color.Green("yt-dlp installed successfully!")
 
 	// Verify installation
 	verifyCmd := exec.Command("yt-dlp", "--version")
