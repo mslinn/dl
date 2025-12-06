@@ -9,28 +9,27 @@ run:
 
 linters:
   enable:
-    # - depguard  # Disabled due to v1.64.8 bug (#3862)
-    - cyclop
-    - errcheck
-    # - gofumpt  # Disabled due to version mismatch
-    - gocognit
-    - goconst
-    - gocyclo
-    - gocritic
-    - funlen
     - gofmt
     - goimports
-    - gosec
-    - gosimple
     - govet
     - ineffassign
     - misspell
+    - errcheck
     - staticcheck
-    - unparam
+    - gofumpt
+    - gosec
+    - gosimple
     - unused
+    - unparam
+    - gocyclo
+    - gocritic
+    # - depguard  # Disabled due to v1.64.8 bug (#3862)
+    - goconst
+    - cyclop
+    - gocognit
+    - funlen
   disable:
     - depguard  # Explicitly disable to avoid GOROOT/$gostd init error
-    - gofumpt
 
 linters-settings:
   cyclop:
@@ -47,7 +46,8 @@ linters-settings:
       - experimental
       - opinionated
 
-
+  gofumpt:
+    extra-rules: true
 
   gocyclo:
     min-complexity: 10
@@ -62,7 +62,7 @@ linters-settings:
 
   depguard:
     rules:
-      _:
+      main:
         allow:
           - $gostd
           - github.com/aws/aws-sdk-go-v2/**
@@ -70,7 +70,6 @@ linters-settings:
           - github.com/fatih/color
           - github.com/fsnotify/fsnotify
           - github.com/go-git/go-git/v5/**
-          - github.com/goccy/go-yaml
           - github.com/goccy/go-yaml
           - github.com/lithammer/dedent
           - github.com/mslinn/jekyll_control/**
