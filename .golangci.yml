@@ -1,0 +1,112 @@
+# GolangCI-Lint Configuration
+# Configuration for static code analysis
+
+run:
+  build-tags:
+    - integration
+    - performance
+  go: "1.24"
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - ineffassign
+    - misspell
+    - errcheck
+    - staticcheck
+    - gofumpt
+    - gosec
+    - gosimple
+    - unused
+    - unparam
+    - gocyclo
+    - gocritic
+    # - depguard  # Disabled due to v1.64.8 bug (#3862)
+    - goconst
+    - cyclop
+    - gocognit
+    - funlen
+  disable:
+    - depguard  # Explicitly disable to avoid GOROOT/$gostd init error
+
+linters-settings:
+  cyclop:
+    max-complexity: 25
+
+  gocognit:
+    min-complexity: 15
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+      - experimental
+      - opinionated
+
+  gofumpt:
+    extra-rules: true
+
+  gocyclo:
+    min-complexity: 10
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  funlen:
+    lines: 60
+    statements: 40
+
+  depguard:
+    rules:
+      _:
+        allow:
+          - $gostd
+          - github.com/aws/aws-sdk-go-v2/**
+          - github.com/coder/websocket
+          - github.com/fatih/color
+          - github.com/fsnotify/fsnotify
+          - github.com/go-git/go-git/v5/**
+          - github.com/goccy/go-yaml
+          - github.com/goccy/go-yaml
+          - github.com/lithammer/dedent
+          - github.com/mslinn/jekyll_control/**
+          - github.com/onsi/gomega
+          - github.com/PuerkitoBio/goquery
+          - github.com/shirou/gopsutil/v4/**
+          - github.com/spf13/cobra
+          - github.com/spf13/pflag
+          - github.com/stretchr/testify/**
+          - golang.org/x/sync/errgroup
+          - golang.org/x/term
+          - testing
+
+  staticcheck:
+    checks:
+      - all
+
+  misspell:
+    locale: US
+
+  errcheck:
+    check-type-assertions: true
+    exclude-functions:
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+
+issues:
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+    - ".*\\.sh$"
+    - "^scripts/[^.]+$"
+    - ".*\\.ya?ml$"
+
+  max-issues-per-linter: 0
+  new: false
+  exclude:
+    - G601
