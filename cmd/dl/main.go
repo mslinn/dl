@@ -16,9 +16,9 @@ import (
 // Variables set at build time using ldflags
 // Example: go build -ldflags "-X main.Version=2.0.0 -X main.Commit=abc123 -X main.BuildDate=2024-01-01"
 var (
-	Version    = "dev"
-	Commit     = "unknown" 
-	BuildDate  = "unknown"
+	Version   = "dev"
+	Commit    = "unknown"
+	BuildDate = "unknown"
 )
 
 // Args holds command line arguments for the dl tool
