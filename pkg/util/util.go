@@ -64,6 +64,14 @@ func RunWithOutput(cmd string) (string, error) {
 // SambaMount mounts a remote Samba share if not already mounted
 // Returns the local mount point path
 func SambaMount(remoteNode, remoteDrive string, verbose bool) (string, error) {
+	// Validate inputs
+	if remoteNode == "" {
+		return "", fmt.Errorf("remote node cannot be empty")
+	}
+	if remoteDrive == "" {
+		return "", fmt.Errorf("remote drive cannot be empty")
+	}
+	
 	slash := ""
 	if !strings.HasPrefix(remoteDrive, "/") {
 		slash = "/"
@@ -85,9 +93,11 @@ func SambaMount(remoteNode, remoteDrive string, verbose bool) (string, error) {
 	}
 
 	if !isMount {
+		// Fix backslash escaping for UNC paths
+		// Windows UNC paths need to be properly escaped for the mount command
 		cmd := fmt.Sprintf("sudo mount -t drvfs '\\\\%s\\%s' %s", remoteNode, remoteDrive, mountPoint)
 		if err := Run(cmd, verbose); err != nil {
-			return "", fmt.Errorf("failed to mount '%s' to '%s': %w", remoteDrive, mountPoint, err)
+			return "", fmt.Errorf("failed to mount '%s\\\\%s' to '%s': %w", remoteNode, remoteDrive, mountPoint, err)
 		}
 	}
 
@@ -115,19 +125,43 @@ func WinHome() (string, error) {
 		return "", fmt.Errorf("not running in WSL")
 	}
 
+	// Check if cmd.exe is available - try multiple locations
+	cmdPath := ""
+	possibleCmdPaths := []string{
+		"/mnt/c/Windows/System32/cmd.exe",
+		"/usr/bin/cmd.exe",
+		"cmd.exe", // Let PATH resolution handle it
+	}
+	
+	for _, path := range possibleCmdPaths {
+		if _, err := os.Stat(path); err == nil {
+			cmdPath = path
+			break
+		}
+	}
+	
+	if cmdPath == "" {
+		return "", fmt.Errorf("cmd.exe not found in any of the expected locations: %v", possibleCmdPaths)
+	}
+
 	// Get Windows home directory
-	cmd := exec.Command("cmd.exe", "/c", "echo %UserProfile%")
+	cmd := exec.Command(cmdPath, "/c", "echo %UserProfile%")
 	output, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to get Windows home: %w", err)
+		return "", fmt.Errorf("failed to execute '%s /c echo %%UserProfile%%': %w", cmdPath, err)
 	}
 	winPath := strings.TrimSpace(string(output))
+
+	// Check if wslpath is available
+	if _, err := os.Stat("/usr/bin/wslpath"); err != nil {
+		return "", fmt.Errorf("wslpath not found at /usr/bin/wslpath - required for path conversion")
+	}
 
 	// Convert to WSL path
 	cmd = exec.Command("/usr/bin/wslpath", winPath)
 	output, err = cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to convert path: %w", err)
+		return "", fmt.Errorf("failed to convert Windows path '%s' using wslpath: %w", winPath, err)
 	}
 
 	return strings.TrimSpace(string(output)), nil

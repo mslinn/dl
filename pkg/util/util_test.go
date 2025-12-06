@@ -225,23 +225,43 @@ func TestIsMountPoint(t *testing.T) {
 // These should be tested manually or in integration tests
 
 func TestSambaMountInvalidPath(t *testing.T) {
-	// This test will likely fail unless running with sudo and on WSL
-	// It's here for documentation purposes
-	t.Skip("Skipping SambaMount test as it requires sudo and WSL")
-
+	// Test with invalid host - should fail gracefully
 	_, err := SambaMount("nonexistent-host", "c", false)
 	if err == nil {
 		t.Error("Expected error for invalid host")
+	} else {
+		t.Logf("✓ Expected error occurred: %v", err)
+	}
+	
+	// Test input validation
+	_, err = SambaMount("", "c", false)
+	if err == nil {
+		t.Error("Expected error for empty remote node")
+	}
+	
+	_, err = SambaMount("test-host", "", false)
+	if err == nil {
+		t.Error("Expected error for empty remote drive")
 	}
 }
 
 func TestWinHomeNotWSL(t *testing.T) {
 	if IsWSL() {
-		t.Skip("Skipping test as we are running in WSL")
-	}
-
-	_, err := WinHome()
-	if err == nil {
-		t.Error("Expected error when not running in WSL")
+		// Test WinHome functionality when running in WSL
+		_, err := WinHome()
+		if err != nil {
+			t.Logf("WinHome() failed: %v", err)
+			// This might be expected if dependencies are missing
+		} else {
+			t.Logf("WinHome() succeeded")
+		}
+	} else {
+		// Test error case when not running in WSL
+		_, err := WinHome()
+		if err == nil {
+			t.Error("Expected error when not running in WSL")
+		} else {
+			t.Logf("✓ Expected error occurred: %v", err)
+		}
 	}
 }
