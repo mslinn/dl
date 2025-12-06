@@ -1,4 +1,4 @@
-.PHONY: build test clean install run help version
+.PHONY: build test clean install run help version go-install
 
 BINARY_NAME=dl
 BIN_DIR=bin
@@ -44,8 +44,19 @@ clean: ## Remove built binaries
 
 install: build ## Install binary to system path
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_PATH)..."
-	sudo mv $(BIN_DIR)/$(BINARY_NAME) $(INSTALL_PATH)/
-	@echo "Installation complete"
+	@if [ -w "$(INSTALL_PATH)" ]; then \
+		mv $(BIN_DIR)/$(BINARY_NAME) $(INSTALL_PATH)/; \
+		echo "Installation complete"; \
+	else \
+		echo "Warning: $(INSTALL_PATH) is not writable. Run with sudo or change INSTALL_PATH."; \
+		echo "Current Go installation directory: $$(go env GOPATH)/bin"; \
+		echo "To install to Go directory, use: go install ./cmd/dl"; \
+	fi
+
+go-install: ## Install using Go's standard installation method
+	@echo "Installing $(BINARY_NAME) using Go's standard installation..."
+	go install ./cmd/dl
+	@echo "Installation complete. Binary location: $$(go env GOPATH)/bin/$(BINARY_NAME)"
 
 run: build ## Build and run with example URL
 	@echo "Running $(BINARY_NAME)..."
