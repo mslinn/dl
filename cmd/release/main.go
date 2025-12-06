@@ -26,6 +26,7 @@ const (
 	colorBlue   = "\033[0;34m"
 )
 
+// Options holds command line options for the release tool
 type Options struct {
 	skipTests bool
 	debug     bool
@@ -82,7 +83,7 @@ func main() {
 	fmt.Println()
 	warning(fmt.Sprintf("Ready to create release v%s", version))
 	if !confirmDefault("Proceed with release?", true) {
-		errorExit("Release cancelled")
+		errorExit("Release canceled")
 	}
 
 	// Create and push tag
@@ -158,8 +159,9 @@ func getNextVersion() string {
 		if len(parts) == 3 {
 			// Increment patch version
 			var major, minor, patch int
-			fmt.Sscanf(latestTag, "%d.%d.%d", &major, &minor, &patch)
-			incrementedVersion = fmt.Sprintf("%d.%d.%d", major, minor, patch+1)
+			if _, err := fmt.Sscanf(latestTag, "%d.%d.%d", &major, &minor, &patch); err == nil {
+				incrementedVersion = fmt.Sprintf("%d.%d.%d", major, minor, patch+1)
+			}
 		}
 	}
 
@@ -191,8 +193,12 @@ func isNewerVersion(v1, v2 string) bool {
 	var major1, minor1, patch1 int
 	var major2, minor2, patch2 int
 
-	fmt.Sscanf(v1, "%d.%d.%d", &major1, &minor1, &patch1)
-	fmt.Sscanf(v2, "%d.%d.%d", &major2, &minor2, &patch2)
+	if _, err := fmt.Sscanf(v1, "%d.%d.%d", &major1, &minor1, &patch1); err != nil {
+		return false
+	}
+	if _, err := fmt.Sscanf(v2, "%d.%d.%d", &major2, &minor2, &patch2); err != nil {
+		return false
+	}
 
 	if major1 != major2 {
 		return major1 > major2
@@ -319,7 +325,7 @@ func runTests() {
 func updateVersionFiles(version string) {
 	info(fmt.Sprintf("Updating VERSION file to %s...", version))
 
-	if err := os.WriteFile("VERSION", []byte(version+"\n"), 0644); err != nil {
+	if err := os.WriteFile("VERSION", []byte(version+"\n"), 0o600); err != nil {
 		errorExit("Failed to write VERSION file")
 	}
 	success("VERSION file updated")
@@ -337,7 +343,9 @@ func updateVersionFiles(version string) {
 	success("Binary rebuilt with new version")
 
 	// Commit VERSION file change
-	runCommandVerbose("git", "add", "VERSION")
+	if err := runCommandVerbose("git", "add", "VERSION"); err != nil {
+		errorExit("Failed to add VERSION file to git")
+	}
 	if err := runCommandVerbose("git", "commit", "-m", fmt.Sprintf("Bump version to %s", version)); err != nil {
 		errorExit("Failed to commit VERSION file")
 	}
@@ -349,44 +357,87 @@ func updateVersionFiles(version string) {
 
 func runGoReleaser(version string, debug bool) {
 	// Check for GITHUB_TOKEN
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		warning("GITHUB_TOKEN environment variable not set")
-		info("Attempting to use GitHub CLI (gh) for authentication...")
-
-		// Try to get token from gh
-		ghToken, err := runCommand("gh", "auth", "token")
-		if err != nil || ghToken == "" {
-			errorExit("Failed to get GitHub token. Please set GITHUB_TOKEN or run 'gh auth login'")
-		}
-		os.Setenv("GITHUB_TOKEN", ghToken)
-		success("Using GitHub CLI token")
-	} else {
-		success("Found GITHUB_TOKEN environment variable")
+	if err := setupGitHubToken(); err != nil {
+		errorExit(err.Error())
 	}
 
 	// Check if goreleaser is installed and version
+	if err := ensureGoReleaser(); err != nil {
+		errorExit(err.Error())
+	}
+
+	// Run goreleaser
+	if err := runGoReleaserRelease(version, debug); err != nil {
+		errorExit(err.Error())
+	}
+
+	success("GitHub release created with binaries uploaded")
+}
+
+func setupGitHubToken() error {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		return setupGitHubTokenFromCLI()
+	}
+
+	success("Found GITHUB_TOKEN environment variable")
+	return nil
+}
+
+func setupGitHubTokenFromCLI() error {
+	warning("GITHUB_TOKEN environment variable not set")
+	info("Attempting to use GitHub CLI (gh) for authentication...")
+
+	// Try to get token from gh
+	ghToken, err := runCommand("gh", "auth", "token")
+	if err != nil || ghToken == "" {
+		return fmt.Errorf("failed to get GitHub token. Please set GITHUB_TOKEN or run 'gh auth login'")
+	}
+	os.Setenv("GITHUB_TOKEN", ghToken)
+	success("Using GitHub CLI token")
+	return nil
+}
+
+func ensureGoReleaser() error {
 	info("Checking for goreleaser...")
-	needsInstall := false
-	output, err := runCommand("goreleaser", "--version")
+	needsInstall, err := checkGoReleaserVersion()
 	if err != nil {
-		needsInstall = true
-	} else {
-		// Check if it's v2 or later
-		if !strings.Contains(output, "goreleaser version v2") && !strings.Contains(output, "goreleaser version 2") {
-			warning("Found older version of goreleaser, upgrading to v2...")
-			needsInstall = true
-		}
+		return err
 	}
 
 	if needsInstall {
-		info("Installing goreleaser v2...")
-		if err := runCommandVerbose("go", "install", "github.com/goreleaser/goreleaser/v2@latest"); err != nil {
-			errorExit("Failed to install goreleaser v2")
-		}
+		return installGoReleaser()
+	}
+
+	success("goreleaser v2 is available")
+	return nil
+}
+
+func checkGoReleaserVersion() (bool, error) {
+	output, err := runCommand("goreleaser", "--version")
+	if err != nil {
+		return true, fmt.Errorf("failed to check goreleaser version: %w", err)
+	}
+
+	if !strings.Contains(output, "goreleaser version v2") && !strings.Contains(output, "goreleaser version 2") {
+		// Check if it's v2 or later
+		warning("Found older version of goreleaser, upgrading to v2...")
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func installGoReleaser() error {
+	info("Installing goreleaser v2...")
+	if err := runCommandVerbose("go", "install", "github.com/goreleaser/goreleaser/v2@latest"); err != nil {
+		return fmt.Errorf("failed to install goreleaser v2")
 	}
 	success("goreleaser v2 is available")
+	return nil
+}
 
+func runGoReleaserRelease(_ string, debug bool) error {
 	// Run goreleaser
 	fmt.Println()
 	info("Running goreleaser to create GitHub release...")
@@ -397,10 +448,10 @@ func runGoReleaser(version string, debug bool) {
 	}
 
 	if err := runCommandVerbose("goreleaser", args...); err != nil {
-		errorExit("goreleaser failed. The tag has been pushed but the release was not created.")
+		return fmt.Errorf("goreleaser failed. The tag has been pushed but the release was not created")
 	}
 
-	success("GitHub release created with binaries uploaded")
+	return nil
 }
 
 func getRepoURL() (string, error) {

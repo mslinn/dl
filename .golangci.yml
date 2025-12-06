@@ -16,7 +16,7 @@ linters:
     - misspell
     - errcheck
     - staticcheck
-    - gofumpt
+    # - gofumpt  # Disabled due to version mismatch
     - gosec
     - gosimple
     - unused
@@ -30,6 +30,7 @@ linters:
     - funlen
   disable:
     - depguard  # Explicitly disable to avoid GOROOT/$gostd init error
+    - gofumpt
 
 linters-settings:
   cyclop:
@@ -46,8 +47,7 @@ linters-settings:
       - experimental
       - opinionated
 
-  gofumpt:
-    extra-rules: true
+
 
   gocyclo:
     min-complexity: 10

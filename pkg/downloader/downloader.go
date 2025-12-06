@@ -16,7 +16,9 @@ import (
 type MediaType int
 
 const (
+	// MP3 represents MP3 audio format
 	MP3 MediaType = iota
+	// Video represents video format
 	Video
 )
 
@@ -106,51 +108,82 @@ func (d *Downloader) Download() (string, error) {
 		return "", err
 	}
 
+	if err := d.checkPrerequisites(); err != nil {
+		return "", err
+	}
+
+	outputPath, args, err := d.buildYtDlpArgs(mediaName)
+	if err != nil {
+		return "", err
+	}
+
+	if err := d.executeYtDlp(args); err != nil {
+		return "", err
+	}
+
+	actualPath := d.determineOutputPath(outputPath)
+	return d.cleanupAndReturn(actualPath)
+}
+
+func (d *Downloader) checkPrerequisites() error {
 	// Check for ffmpeg if downloading audio
 	if d.opts.MediaType == MP3 {
-		if err := CheckFfmpeg(); err != nil {
-			return "", err
-		}
+		return CheckFfmpeg()
 	}
+	return nil
+}
 
-	var outputPath string
-	var args []string
-
+func (d *Downloader) buildYtDlpArgs(mediaName string) (outputPath string, args []string, err error) {
 	switch d.opts.MediaType {
 	case MP3:
-		outputPath = filepath.Join(d.opts.Destination, mediaName)
-		args = []string{
-			"--extract-audio",
-			"--audio-format", d.opts.Format,
-			"--output", outputPath + ".%(ext)s",
-		}
-		if d.opts.Verbose {
-			args = append(args, "--verbose", "--progress")
-		} else {
-			args = append(args, "--quiet", "--no-warnings")
-		}
-		args = append(args, d.opts.URL)
-
-		fmt.Printf("Saving %s.%s\n", outputPath, d.opts.Format)
-
+		return d.buildMP3Args(mediaName)
 	case Video:
-		outputPath = filepath.Join(d.opts.Destination, mediaName)
-		args = []string{
-			"--format", "mp4",
-			"--merge-output-format", "mp4",
-			"--output", outputPath + ".mp4",
-		}
-		if d.opts.Verbose {
-			args = append(args, "--verbose", "--progress")
-		} else {
-			args = append(args, "--quiet", "--no-warnings")
-		}
-		args = append(args, d.opts.URL)
+		return d.buildVideoArgs(mediaName)
+	default:
+		return "", nil, fmt.Errorf("unsupported media type: %v", d.opts.MediaType)
+	}
+}
 
-		fmt.Printf("Saving %s.mp4\n", outputPath)
+func (d *Downloader) buildMP3Args(mediaName string) (outputPath string, args []string, err error) {
+	outputPath = filepath.Join(d.opts.Destination, mediaName)
+	args = []string{
+		"--extract-audio",
+		"--audio-format", d.opts.Format,
+		"--output", outputPath + ".%(ext)s",
 	}
 
-	// Execute yt-dlp
+	args = appendVerboseArgs(args, d.opts.Verbose)
+	args = append(args, d.opts.URL)
+
+	fmt.Printf("Saving %s.%s\n", outputPath, d.opts.Format)
+
+	return outputPath, args, nil
+}
+
+func (d *Downloader) buildVideoArgs(mediaName string) (outputPath string, args []string, err error) {
+	outputPath = filepath.Join(d.opts.Destination, mediaName)
+	args = []string{
+		"--format", "mp4",
+		"--merge-output-format", "mp4",
+		"--output", outputPath + ".mp4",
+	}
+
+	args = appendVerboseArgs(args, d.opts.Verbose)
+	args = append(args, d.opts.URL)
+
+	fmt.Printf("Saving %s.mp4\n", outputPath)
+
+	return outputPath, args, nil
+}
+
+func appendVerboseArgs(args []string, verbose bool) []string {
+	if verbose {
+		return append(args, "--verbose", "--progress")
+	}
+	return append(args, "--quiet", "--no-warnings")
+}
+
+func (d *Downloader) executeYtDlp(args []string) error {
 	if d.opts.Verbose {
 		fmt.Printf("Running: yt-dlp %s\n", strings.Join(args, " "))
 	}
@@ -159,21 +192,25 @@ func (d *Downloader) Download() (string, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("download failed: %w", err)
-	}
+	return cmd.Run()
+}
 
-	// Determine the actual output filename
+func (d *Downloader) determineOutputPath(outputPath string) string {
 	actualPath := outputPath + "." + d.opts.Format
 	if d.opts.MediaType == Video {
 		actualPath = outputPath + ".mp4"
 	}
+	return actualPath
+}
 
+func (d *Downloader) cleanupAndReturn(actualPath string) (string, error) {
 	// Clean up any .webm files if video
 	if d.opts.MediaType == Video {
-		webmPath := outputPath + ".webm"
+		webmPath := strings.TrimSuffix(actualPath, ".mp4") + ".webm"
 		if _, err := os.Stat(webmPath); err == nil {
-			os.Remove(webmPath)
+			if err := os.Remove(webmPath); err != nil {
+				return actualPath, fmt.Errorf("failed to remove .webm file: %w", err)
+			}
 		}
 	}
 

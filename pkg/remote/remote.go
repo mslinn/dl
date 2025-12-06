@@ -7,6 +7,7 @@ import (
 
 	"dl/pkg/config"
 	"dl/pkg/util"
+
 	"github.com/fatih/color"
 )
 
@@ -14,8 +15,11 @@ import (
 type Purpose int
 
 const (
+	// PurposeMP3s indicates copying MP3 files
 	PurposeMP3s Purpose = iota
+	// PurposeVideos indicates copying video files
 	PurposeVideos
+	// PurposeXRated indicates copying adult content
 	PurposeXRated
 )
 

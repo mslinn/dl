@@ -17,6 +17,7 @@ import (
 // Example: go build -ldflags "-X main.version=2.0.0"
 var version = "dev"
 
+// Args holds command line arguments for the dl tool
 type Args struct {
 	url        string
 	debug      bool
@@ -30,64 +31,87 @@ type Args struct {
 func main() {
 	args := parseArgs()
 
-	// Check if yt-dlp is installed
 	if err := downloader.CheckYtDlp(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Load configuration
 	cfg, err := config.Load(args.configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Determine media type and destination
-	mediaType := downloader.MP3
-	format := "mp3"
-	var destination string
-	var purpose remote.Purpose
-
-	if args.keepVideo || args.videoDest != "" || args.xrated {
-		mediaType = downloader.Video
-		format = "mp4"
-		purpose = remote.PurposeVideos
-
-		if args.xrated {
-			destination, err = cfg.GetXDestPath()
-			purpose = remote.PurposeXRated
-		} else if args.videoDest != "" {
-			destination = args.videoDest
-		} else {
-			destination, err = cfg.GetVDestPath()
-		}
-
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		// MP3 download
-		destination, err = cfg.GetMP3sPath()
-		purpose = remote.PurposeMP3s
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
+	destination, purpose, mediaType, format, err := determineDestinationAndMediaType(args, cfg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 
 	if args.verbose {
-		fmt.Printf("Downloading from: %s\n", args.url)
-		fmt.Printf("Media type: %s\n", format)
-		fmt.Printf("Destination: %s\n", destination)
-		if len(cfg.ActiveRemotes) > 0 {
-			fmt.Printf("Active remotes: %s\n", strings.Join(cfg.GetActiveRemoteNames(), ", "))
-		}
-		fmt.Println()
+		printDownloadInfo(args.url, format, destination, cfg)
 	}
 
-	// Download media
+	localPath, err := downloadMedia(args, destination, mediaType, format)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Download failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Successfully downloaded to: %s\n", localPath)
+
+	if err := copyToRemotes(cfg, localPath, purpose, args.verbose); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: some remote copies failed: %v\n", err)
+	}
+
+	fmt.Println("Done!")
+}
+
+func determineDestinationAndMediaType(args *Args, cfg *config.Config) (destination string, purpose remote.Purpose, mediaType downloader.MediaType, format string, err error) {
+	if args.keepVideo || args.videoDest != "" || args.xrated {
+		return determineVideoDestination(args, cfg)
+	}
+
+	return determineMP3Destination(cfg)
+}
+
+func determineVideoDestination(args *Args, cfg *config.Config) (destination string, purpose remote.Purpose, mediaType downloader.MediaType, format string, err error) {
+	mediaType = downloader.Video
+	format = "mp4"
+
+	switch {
+	case args.xrated:
+		destination, err = cfg.GetXDestPath()
+		purpose = remote.PurposeXRated
+	case args.videoDest != "":
+		destination = args.videoDest
+	default:
+		destination, err = cfg.GetVDestPath()
+	}
+
+	return destination, purpose, mediaType, format, err
+}
+
+func determineMP3Destination(cfg *config.Config) (destination string, purpose remote.Purpose, mediaType downloader.MediaType, format string, err error) {
+	destination, err = cfg.GetMP3sPath()
+	purpose = remote.PurposeMP3s
+	mediaType = downloader.MP3
+	format = "mp3"
+
+	return destination, purpose, mediaType, format, err
+}
+
+func printDownloadInfo(url, format, destination string, cfg *config.Config) {
+	fmt.Printf("Downloading from: %s\n", url)
+	fmt.Printf("Media type: %s\n", format)
+	fmt.Printf("Destination: %s\n", destination)
+	if len(cfg.ActiveRemotes) > 0 {
+		fmt.Printf("Active remotes: %s\n", strings.Join(cfg.GetActiveRemoteNames(), ", "))
+	}
+	fmt.Println()
+}
+
+func downloadMedia(args *Args, destination string, mediaType downloader.MediaType, format string) (string, error) {
 	opts := &downloader.Options{
 		URL:         args.url,
 		Destination: destination,
@@ -98,23 +122,16 @@ func main() {
 	}
 
 	dl := downloader.New(opts)
-	localPath, err := dl.Download()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Download failed: %v\n", err)
-		os.Exit(1)
+	return dl.Download()
+}
+
+func copyToRemotes(cfg *config.Config, localPath string, purpose remote.Purpose, verbose bool) error {
+	if len(cfg.ActiveRemotes) == 0 {
+		return nil
 	}
 
-	fmt.Printf("Successfully downloaded to: %s\n", localPath)
-
-	// Copy to remotes if configured
-	if len(cfg.ActiveRemotes) > 0 {
-		copier := remote.New(cfg, args.verbose)
-		if err := copier.CopyToRemotes(localPath, purpose); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: some remote copies failed: %v\n", err)
-		}
-	}
-
-	fmt.Println("Done!")
+	copier := remote.New(cfg, verbose)
+	return copier.CopyToRemotes(localPath, purpose)
 }
 
 func parseArgs() *Args {
