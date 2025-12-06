@@ -1,9 +1,21 @@
-.PHONY: build test clean install run help version go-install
+.PHONY: build test clean install run help go-install
 
 BINARY_NAME=dl
 BIN_DIR=bin
-INSTALL_PATH=/usr/local/bin
 VERSION=$(shell cat VERSION)
+
+# Determine install directory using Go standard locations
+GOBIN ?= $(shell go env GOBIN)
+ifeq ($(GOBIN),)
+  GOPATH ?= $(shell go env GOPATH)
+  ifeq ($(GOPATH),)
+    INSTALL_DIR := $(HOME)/go/bin
+  else
+    INSTALL_DIR := $(GOPATH)/bin
+  endif
+else
+  INSTALL_DIR := $(GOBIN)
+endif
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -23,6 +35,12 @@ build-release-tool: ## Build the release tool (developers only)
 	@echo "Build complete: ./release"
 	@echo "Note: This is a development tool and is not installed with 'go install'"
 
+install: build ## Install binary using Go's standard installation method
+	@echo "Installing $(BINARY_NAME) to $(INSTALL_DIR)..."
+	go install -ldflags "-X main.version=$(VERSION)" ./cmd/dl
+	@echo "Installation complete. Binary location: $(INSTALL_DIR)/$(BINARY_NAME)"
+	@echo "$$PATH" | grep -q "$(INSTALL_DIR)" || echo "Warning: $(INSTALL_DIR) is not in your PATH."
+
 test: ## Run all tests
 	@echo "Running tests..."
 	go test -v ./...
@@ -41,22 +59,6 @@ clean: ## Remove built binaries
 	rm -f dl-*
 	rm -f release
 	@echo "Clean complete"
-
-install: build ## Install binary to system path
-	@echo "Installing $(BINARY_NAME) to $(INSTALL_PATH)..."
-	@if [ -w "$(INSTALL_PATH)" ]; then \
-		mv $(BIN_DIR)/$(BINARY_NAME) $(INSTALL_PATH)/; \
-		echo "Installation complete"; \
-	else \
-		echo "Warning: $(INSTALL_PATH) is not writable. Run with sudo or change INSTALL_PATH."; \
-		echo "Current Go installation directory: $$(go env GOPATH)/bin"; \
-		echo "To install to Go directory, use: go install ./cmd/dl"; \
-	fi
-
-go-install: ## Install using Go's standard installation method
-	@echo "Installing $(BINARY_NAME) using Go's standard installation..."
-	go install ./cmd/dl
-	@echo "Installation complete. Binary location: $$(go env GOPATH)/bin/$(BINARY_NAME)"
 
 run: build ## Build and run with example URL
 	@echo "Running $(BINARY_NAME)..."
