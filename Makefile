@@ -1,8 +1,13 @@
-.PHONY: build test clean install run help go-install
+.PHONY: build test clean install run help
 
-BINARY_NAME=dl
-BIN_DIR=bin
-VERSION=$(shell cat VERSION)
+# Variables
+BINARY_NAME := dl
+BIN_DIR := bin
+COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
+VERSION := $(shell cat VERSION 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || echo "dev")
+LDFLAGS := -ldflags="-s -w -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)' -X 'main.BuildDate=$(BUILD_DATE)'"
+GOINSTALL := go install
 
 # Determine install directory using Go standard locations
 GOBIN ?= $(shell go env GOBIN)
@@ -24,9 +29,9 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
 
 build: ## Build the binary
-	@echo "Building $(BINARY_NAME)..."
+	@echo "Building $(BINARY_NAME) version $(VERSION)..."
 	@mkdir -p $(BIN_DIR)
-	go build -ldflags "-X main.version=$(VERSION)" -o $(BIN_DIR)/$(BINARY_NAME) ./cmd/dl
+	go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME) ./cmd/dl
 	@echo "Build complete: $(BIN_DIR)/$(BINARY_NAME)"
 
 build-release-tool: ## Build the release tool (developers only)
@@ -37,7 +42,7 @@ build-release-tool: ## Build the release tool (developers only)
 
 install: build ## Install binary using Go's standard installation method
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_DIR)..."
-	go install -ldflags "-X main.version=$(VERSION)" ./cmd/dl
+	@$(GOINSTALL) $(LDFLAGS) ./cmd/dl
 	@echo "Installation complete. Binary location: $(INSTALL_DIR)/$(BINARY_NAME)"
 	@echo "$$PATH" | grep -q "$(INSTALL_DIR)" || echo "Warning: $(INSTALL_DIR) is not in your PATH."
 
@@ -78,11 +83,11 @@ lint: ## Run golint (requires golint to be installed)
 
 build-all: ## Build for all platforms
 	@echo "Building for all platforms..."
-	GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-linux-amd64 ./cmd/dl
-	GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-linux-arm64 ./cmd/dl
-	GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-darwin-amd64 ./cmd/dl
-	GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-darwin-arm64 ./cmd/dl
-	GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME)-windows-amd64.exe ./cmd/dl
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-amd64 ./cmd/dl
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-arm64 ./cmd/dl
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-amd64 ./cmd/dl
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-arm64 ./cmd/dl
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-windows-amd64.exe ./cmd/dl
 	@echo "Build complete for all platforms"
 
 deps: ## Download dependencies

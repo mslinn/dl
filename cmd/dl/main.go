@@ -13,9 +13,13 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-// version is set at build time using ldflags
-// Example: go build -ldflags "-X main.version=2.0.0"
-var version = "dev"
+// Variables set at build time using ldflags
+// Example: go build -ldflags "-X main.Version=2.0.0 -X main.Commit=abc123 -X main.BuildDate=2024-01-01"
+var (
+	Version    = "dev"
+	Commit     = "unknown" 
+	BuildDate  = "unknown"
+)
 
 // Args holds command line arguments for the dl tool
 type Args struct {
@@ -146,7 +150,14 @@ func parseArgs() *Args {
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "dl - Download videos and audio from various websites\n\n")
-		fmt.Fprintf(os.Stderr, "Version: %s\n\n", strings.TrimSpace(version))
+		fmt.Fprintf(os.Stderr, "Version: %s\n", Version)
+		if Commit != "unknown" {
+			fmt.Fprintf(os.Stderr, "Commit: %s\n", Commit)
+		}
+		if BuildDate != "unknown" {
+			fmt.Fprintf(os.Stderr, "Build date: %s\n", BuildDate)
+		}
+		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] URL\n\n", filepath.Base(os.Args[0]))
 		fmt.Fprintf(os.Stderr, "Downloads media from URLs using yt-dlp.\n")
 		fmt.Fprintf(os.Stderr, "By default, downloads audio as MP3, unless -k, -x, or -V options are provided.\n\n")
