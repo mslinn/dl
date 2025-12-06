@@ -232,13 +232,13 @@ func TestSambaMountInvalidPath(t *testing.T) {
 	} else {
 		t.Logf("✓ Expected error occurred: %v", err)
 	}
-	
+
 	// Test input validation
 	_, err = SambaMount("", "c", false)
 	if err == nil {
 		t.Error("Expected error for empty remote node")
 	}
-	
+
 	_, err = SambaMount("test-host", "", false)
 	if err == nil {
 		t.Error("Expected error for empty remote drive")

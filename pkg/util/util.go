@@ -71,7 +71,7 @@ func SambaMount(remoteNode, remoteDrive string, verbose bool) (string, error) {
 	if remoteDrive == "" {
 		return "", fmt.Errorf("remote drive cannot be empty")
 	}
-	
+
 	slash := ""
 	if !strings.HasPrefix(remoteDrive, "/") {
 		slash = "/"
@@ -132,14 +132,14 @@ func WinHome() (string, error) {
 		"/usr/bin/cmd.exe",
 		"cmd.exe", // Let PATH resolution handle it
 	}
-	
+
 	for _, path := range possibleCmdPaths {
 		if _, err := os.Stat(path); err == nil {
 			cmdPath = path
 			break
 		}
 	}
-	
+
 	if cmdPath == "" {
 		return "", fmt.Errorf("cmd.exe not found in any of the expected locations: %v", possibleCmdPaths)
 	}
