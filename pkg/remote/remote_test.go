@@ -43,7 +43,52 @@ func TestGetRemotePath(t *testing.T) {
 		verbose: false,
 	}
 
-	tests := []struct {
+	tests := getRemotePathTestCases()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path, err := copier.getRemotePath(tt.remote, tt.purpose)
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+
+			if path != tt.expected {
+				t.Errorf("Expected %s, got %s", tt.expected, path)
+			}
+		})
+	}
+}
+
+func getRemotePathTestCases() []struct {
+	name        string
+	remote      *config.Remote
+	purpose     Purpose
+	expected    string
+	expectError bool
+} {
+	return append(
+		getValidRemotePathTestCases(),
+		getInvalidRemotePathTestCases()...,
+	)
+}
+
+func getValidRemotePathTestCases() []struct {
+	name        string
+	remote      *config.Remote
+	purpose     Purpose
+	expected    string
+	expectError bool
+} {
+	return []struct {
 		name        string
 		remote      *config.Remote
 		purpose     Purpose
@@ -83,6 +128,23 @@ func TestGetRemotePath(t *testing.T) {
 			expected:    "/data/xrated",
 			expectError: false,
 		},
+	}
+}
+
+func getInvalidRemotePathTestCases() []struct {
+	name        string
+	remote      *config.Remote
+	purpose     Purpose
+	expected    string
+	expectError bool
+} {
+	return []struct {
+		name        string
+		remote      *config.Remote
+		purpose     Purpose
+		expected    string
+		expectError bool
+	}{
 		{
 			name: "missing mp3s path",
 			remote: &config.Remote{
@@ -111,28 +173,6 @@ func TestGetRemotePath(t *testing.T) {
 			expectError: true,
 		},
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			path, err := copier.getRemotePath(tt.remote, tt.purpose)
-
-			if tt.expectError {
-				if err == nil {
-					t.Error("Expected error but got nil")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("Unexpected error: %v", err)
-				return
-			}
-
-			if path != tt.expected {
-				t.Errorf("Expected %s, got %s", tt.expected, path)
-			}
-		})
-	}
 }
 
 func TestCopyToRemotesNoRemotes(t *testing.T) {
@@ -144,7 +184,7 @@ func TestCopyToRemotesNoRemotes(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -157,7 +197,9 @@ func TestCopyToRemotesNoRemotes(t *testing.T) {
 func TestCopyToRemotesWithRemote(t *testing.T) {
 	tmpDir := t.TempDir()
 	destDir := filepath.Join(tmpDir, "dest")
-	os.MkdirAll(destDir, 0755)
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
+		t.Fatalf("Failed to create destination directory: %v", err)
+	}
 
 	cfg := &config.Config{
 		ActiveRemotes: map[string]*config.Remote{
@@ -171,7 +213,7 @@ func TestCopyToRemotesWithRemote(t *testing.T) {
 	copier := New(cfg, true)
 
 	testFile := filepath.Join(tmpDir, "test.mp3")
-	if err := os.WriteFile(testFile, []byte("test audio"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test audio"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -197,7 +239,7 @@ func TestCopyToRemotesInvalidPurpose(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -219,7 +261,7 @@ func TestCopyToRemoteMethod(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -237,7 +279,7 @@ func TestCopySambaInvalidPath(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -256,7 +298,7 @@ func TestCopySCPConstruction(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
@@ -295,7 +337,7 @@ func TestCopySambaIntegration(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	if err := os.WriteFile(testFile, []byte("test content"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test content"), 0o600); err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 

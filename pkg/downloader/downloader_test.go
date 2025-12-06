@@ -63,21 +63,34 @@ func TestGetMediaName(t *testing.T) {
 		t.Skip("Skipping test due to network or API issue")
 	}
 
+	validateMediaName(t, name)
+}
+
+func validateMediaName(t *testing.T, name string) {
 	if name == "" {
 		t.Error("GetMediaName returned empty string")
 	}
 
 	t.Logf("Media name: %s", name)
 
-	// Check that the name is sanitized (no special characters except underscore)
+	checkNameCharacters(t, name)
+	checkNameLength(t, name)
+}
+
+func checkNameCharacters(t *testing.T, name string) {
 	for _, char := range name {
-		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') || char == '_') {
+		if !isValidMediaNameChar(char) {
 			t.Errorf("Name contains invalid character: %c", char)
 		}
 	}
+}
 
-	// Check length limit
+func isValidMediaNameChar(char rune) bool {
+	return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+		(char >= '0' && char <= '9') || char == '_'
+}
+
+func checkNameLength(t *testing.T, name string) {
 	if len(name) > 200 {
 		t.Errorf("Name too long: %d characters", len(name))
 	}
@@ -86,7 +99,21 @@ func TestGetMediaName(t *testing.T) {
 func TestOptions(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	tests := []struct {
+	tests := getOptionsTestCases(tmpDir)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runOptionsTest(t, tt.opts, tt.wantError)
+		})
+	}
+}
+
+func getOptionsTestCases(tmpDir string) []struct {
+	name      string
+	opts      *Options
+	wantError bool
+} {
+	return []struct {
 		name      string
 		opts      *Options
 		wantError bool
@@ -114,30 +141,32 @@ func TestOptions(t *testing.T) {
 			wantError: false,
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dl := New(tt.opts)
-			if dl == nil {
-				t.Fatal("New returned nil")
-			}
+func runOptionsTest(t *testing.T, opts *Options, _ bool) {
+	dl := New(opts)
+	if dl == nil {
+		t.Fatal("New returned nil")
+	}
 
-			if dl.opts.URL != tt.opts.URL {
-				t.Errorf("URL mismatch: expected %s, got %s", tt.opts.URL, dl.opts.URL)
-			}
+	validateOptions(t, dl, opts)
+}
 
-			if dl.opts.MediaType != tt.opts.MediaType {
-				t.Errorf("MediaType mismatch: expected %v, got %v", tt.opts.MediaType, dl.opts.MediaType)
-			}
+func validateOptions(t *testing.T, dl *Downloader, expected *Options) {
+	if dl.opts.URL != expected.URL {
+		t.Errorf("URL mismatch: expected %s, got %s", expected.URL, dl.opts.URL)
+	}
 
-			if dl.opts.Format != tt.opts.Format {
-				t.Errorf("Format mismatch: expected %s, got %s", tt.opts.Format, dl.opts.Format)
-			}
+	if dl.opts.MediaType != expected.MediaType {
+		t.Errorf("MediaType mismatch: expected %v, got %v", expected.MediaType, dl.opts.MediaType)
+	}
 
-			if dl.opts.Verbose != tt.opts.Verbose {
-				t.Errorf("Verbose mismatch: expected %v, got %v", tt.opts.Verbose, dl.opts.Verbose)
-			}
-		})
+	if dl.opts.Format != expected.Format {
+		t.Errorf("Format mismatch: expected %s, got %s", expected.Format, dl.opts.Format)
+	}
+
+	if dl.opts.Verbose != expected.Verbose {
+		t.Errorf("Verbose mismatch: expected %v, got %v", expected.Verbose, dl.opts.Verbose)
 	}
 }
 
@@ -222,7 +251,9 @@ func TestDestinationPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create the destination directory
-			os.MkdirAll(tt.destination, 0755)
+			if err := os.MkdirAll(tt.destination, 0o755); err != nil {
+				t.Fatalf("Failed to create destination directory: %v", err)
+			}
 
 			opts := &Options{
 				URL:         "https://example.com/video",

@@ -9,11 +9,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	// DefaultMethodSCP is the default method for remote transfers
+	DefaultMethodSCP = "scp"
+)
+
 // Config represents the application configuration
 type Config struct {
 	ConfigPath    string
-	Local         *LocalConfig         `yaml:"local"`
-	Remotes       map[string]*Remote   `yaml:"remotes"`
+	Local         *LocalConfig       `yaml:"local"`
+	Remotes       map[string]*Remote `yaml:"remotes"`
 	ActiveRemotes map[string]*Remote
 }
 
@@ -36,13 +41,9 @@ type Remote struct {
 
 // Load reads and parses the configuration file
 func Load(configPath string) (*Config, error) {
-	expandedPath := os.ExpandEnv(configPath)
-	if strings.HasPrefix(expandedPath, "~/") {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user home directory: %w", err)
-		}
-		expandedPath = filepath.Join(home, expandedPath[2:])
+	expandedPath, err := expandConfigPath(configPath)
+	if err != nil {
+		return nil, err
 	}
 
 	data, err := os.ReadFile(expandedPath)
@@ -50,13 +51,44 @@ func Load(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config file %s: %w", expandedPath, err)
 	}
 
+	cfg, err := unmarshalConfig(data, expandedPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := expandEnvVariables(cfg); err != nil {
+		return nil, err
+	}
+
+	cfg.ActiveRemotes = findActiveRemotes(cfg.Remotes)
+
+	return cfg, nil
+}
+
+func expandConfigPath(configPath string) (string, error) {
+	expandedPath := os.ExpandEnv(configPath)
+	if strings.HasPrefix(expandedPath, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to get user home directory: %w", err)
+		}
+		expandedPath = filepath.Join(home, expandedPath[2:])
+	}
+	return expandedPath, nil
+}
+
+func unmarshalConfig(data []byte, configPath string) (*Config, error) {
 	var cfg Config
-	cfg.ConfigPath = expandedPath
+	cfg.ConfigPath = configPath
 
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
+	return &cfg, nil
+}
+
+func expandEnvVariables(cfg *Config) error {
 	// Expand environment variables in local paths
 	if cfg.Local != nil {
 		cfg.Local.MP3s = expandEnvVars(cfg.Local.MP3s)
@@ -65,30 +97,38 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// Expand environment variables in remote paths
-	if cfg.Remotes != nil {
-		for _, remote := range cfg.Remotes {
-			remote.MP3s = expandEnvVars(remote.MP3s)
-			remote.VDest = expandEnvVars(remote.VDest)
-			remote.XDest = expandEnvVars(remote.XDest)
-			if remote.Other != "" {
-				remote.Other = expandEnvVars(remote.Other)
-			}
-			// Default method to scp if not specified
-			if remote.Method == "" {
-				remote.Method = "scp"
-			}
+	return expandRemoteEnvVariables(cfg.Remotes)
+}
+
+func expandRemoteEnvVariables(remotes map[string]*Remote) error {
+	if remotes == nil {
+		return nil
+	}
+
+	for _, remote := range remotes {
+		remote.MP3s = expandEnvVars(remote.MP3s)
+		remote.VDest = expandEnvVars(remote.VDest)
+		remote.XDest = expandEnvVars(remote.XDest)
+		if remote.Other != "" {
+			remote.Other = expandEnvVars(remote.Other)
+		}
+		// Default method to scp if not specified
+		if remote.Method == "" {
+			remote.Method = DefaultMethodSCP
 		}
 	}
 
-	// Find active remotes
-	cfg.ActiveRemotes = make(map[string]*Remote)
-	for name, remote := range cfg.Remotes {
+	return nil
+}
+
+func findActiveRemotes(remotes map[string]*Remote) map[string]*Remote {
+	activeRemotes := make(map[string]*Remote)
+	for name, remote := range remotes {
 		if !remote.Disabled {
-			cfg.ActiveRemotes[name] = remote
+			activeRemotes[name] = remote
 		}
 	}
-
-	return &cfg, nil
+	return activeRemotes
 }
 
 // expandEnvVars expands environment variables in a string

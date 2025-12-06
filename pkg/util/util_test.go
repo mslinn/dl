@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +15,52 @@ func TestIsWSL(t *testing.T) {
 }
 
 func TestSambaParse(t *testing.T) {
-	tests := []struct {
+	tests := getSambaParseTestCases()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runSambaParseTest(t, tt)
+		})
+	}
+}
+
+func runSambaParseTest(t *testing.T, tt struct {
+	name          string
+	input         string
+	expectedDrive string
+	expectedPath  string
+	expectError   bool
+}) {
+	drive, path, err := SambaParse(tt.input)
+
+	if tt.expectError {
+		if err == nil {
+			t.Error("Expected error but got nil")
+		}
+		return
+	}
+
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+		return
+	}
+
+	if drive != tt.expectedDrive {
+		t.Errorf("Expected drive %s, got %s", tt.expectedDrive, drive)
+	}
+	if path != tt.expectedPath {
+		t.Errorf("Expected path %s, got %s", tt.expectedPath, path)
+	}
+}
+
+func getSambaParseTestCases() []struct {
+	name          string
+	input         string
+	expectedDrive string
+	expectedPath  string
+	expectError   bool
+} {
+	return []struct {
 		name          string
 		input         string
 		expectedDrive string
@@ -46,30 +92,6 @@ func TestSambaParse(t *testing.T) {
 			expectError: true,
 		},
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			drive, path, err := SambaParse(tt.input)
-			if tt.expectError {
-				if err == nil {
-					t.Error("Expected error but got nil")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("Unexpected error: %v", err)
-				return
-			}
-
-			if drive != tt.expectedDrive {
-				t.Errorf("Expected drive %s, got %s", tt.expectedDrive, drive)
-			}
-			if path != tt.expectedPath {
-				t.Errorf("Expected path %s, got %s", tt.expectedPath, path)
-			}
-		})
-	}
 }
 
 func TestExpandEnvVars(t *testing.T) {
@@ -93,7 +115,7 @@ func TestCopyFile(t *testing.T) {
 	// Create a source file
 	srcPath := filepath.Join(tmpDir, "source.txt")
 	content := []byte("test content")
-	if err := os.WriteFile(srcPath, content, 0644); err != nil {
+	if err := os.WriteFile(srcPath, content, 0o600); err != nil {
 		t.Fatalf("Failed to create source file: %v", err)
 	}
 
@@ -109,7 +131,7 @@ func TestCopyFile(t *testing.T) {
 		t.Fatalf("Failed to read destination file: %v", err)
 	}
 
-	if string(dstContent) != string(content) {
+	if !bytes.Equal(dstContent, content) {
 		t.Errorf("Content mismatch. Expected %s, got %s", content, dstContent)
 	}
 }
@@ -125,7 +147,7 @@ func TestCopyFileErrors(t *testing.T) {
 
 	// Test copying to invalid destination
 	srcPath := filepath.Join(tmpDir, "source.txt")
-	if err := os.WriteFile(srcPath, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(srcPath, []byte("test"), 0o600); err != nil {
 		t.Fatalf("Failed to create source file: %v", err)
 	}
 
@@ -174,16 +196,26 @@ func TestRunWithOutput(t *testing.T) {
 
 func TestIsMountPoint(t *testing.T) {
 	// Test with root directory (should be a mount point)
-	result := IsMountPoint("/")
-	t.Logf("IsMountPoint('/') returned: %v", result)
+	result, err := IsMountPoint("/")
+	if err != nil {
+		t.Logf("IsMountPoint('/') error: %v", err)
+	} else {
+		t.Logf("IsMountPoint('/') returned: %v", result)
+	}
 
 	// Test with /tmp (usually not a separate mount point, but might be)
-	result = IsMountPoint("/tmp")
-	t.Logf("IsMountPoint('/tmp') returned: %v", result)
+	result, err = IsMountPoint("/tmp")
+	if err != nil {
+		t.Logf("IsMountPoint('/tmp') error: %v", err)
+	} else {
+		t.Logf("IsMountPoint('/tmp') returned: %v", result)
+	}
 
 	// Test with non-existent path
-	result = IsMountPoint("/nonexistent/path/xyz")
-	if result {
+	result, err = IsMountPoint("/nonexistent/path/xyz")
+	if err != nil {
+		t.Logf("IsMountPoint('/nonexistent/path/xyz') error: %v", err)
+	} else if result {
 		t.Error("Non-existent path should not be a mount point")
 	}
 }

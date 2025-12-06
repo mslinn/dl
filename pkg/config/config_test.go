@@ -7,8 +7,26 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	// Create a temporary config file
-	configContent := `local:
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "test.config")
+
+	configContent := getTestConfigContent()
+	if err := os.WriteFile(configPath, []byte(configContent), 0o600); err != nil {
+		t.Fatalf("Failed to create test config: %v", err)
+	}
+
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+
+	validateLocalConfig(t, cfg)
+	validateRemotes(t, cfg)
+	validateActiveRemotes(t, cfg)
+}
+
+func getTestConfigContent() string {
+	return `local:
   mp3s: /tmp/music
   vdest: /tmp/videos
   xdest: /tmp/xrated
@@ -24,23 +42,13 @@ remotes:
     disabled: true
     mp3s: /other/music
 `
+}
 
-	tmpDir := t.TempDir()
-	configPath := filepath.Join(tmpDir, "test.config")
-	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
-		t.Fatalf("Failed to create test config: %v", err)
-	}
-
-	// Load the config
-	cfg, err := Load(configPath)
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	// Test local config
+func validateLocalConfig(t *testing.T, cfg *Config) {
 	if cfg.Local == nil {
 		t.Fatal("Local config is nil")
 	}
+
 	if cfg.Local.MP3s != "/tmp/music" {
 		t.Errorf("Expected MP3s to be /tmp/music, got %s", cfg.Local.MP3s)
 	}
@@ -50,8 +58,9 @@ remotes:
 	if cfg.Local.XDest != "/tmp/xrated" {
 		t.Errorf("Expected XDest to be /tmp/xrated, got %s", cfg.Local.XDest)
 	}
+}
 
-	// Test remotes
+func validateRemotes(t *testing.T, cfg *Config) {
 	if cfg.Remotes == nil {
 		t.Fatal("Remotes is nil")
 	}
@@ -66,14 +75,15 @@ remotes:
 	if testRemote.Disabled {
 		t.Error("test-remote should not be disabled")
 	}
-	if testRemote.Method != "scp" {
-		t.Errorf("Expected method to be scp, got %s", testRemote.Method)
+	if testRemote.Method != DefaultMethodSCP {
+		t.Errorf("Expected method to be %s, got %s", DefaultMethodSCP, testRemote.Method)
 	}
 	if testRemote.MP3s != "/data/music" {
 		t.Errorf("Expected MP3s to be /data/music, got %s", testRemote.MP3s)
 	}
+}
 
-	// Test active remotes
+func validateActiveRemotes(t *testing.T, cfg *Config) {
 	if len(cfg.ActiveRemotes) != 1 {
 		t.Errorf("Expected 1 active remote, got %d", len(cfg.ActiveRemotes))
 	}
@@ -218,7 +228,7 @@ func TestDefaultMethod(t *testing.T) {
 
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "test.config")
-	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+	if err := os.WriteFile(configPath, []byte(configContent), 0o600); err != nil {
 		t.Fatalf("Failed to create test config: %v", err)
 	}
 

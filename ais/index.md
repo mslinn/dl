@@ -13,5 +13,7 @@ instructions.
 
 ## DO THIS NOW
 
-Read `/mnt/f/work/llm/agent_instructions/cobra_dry.md` and look for DRY
-opportunities, then discuss.
+Look for comments that state something to the effect that if the impossible
+happens, ignore it. We take the opposite approach: if the impossible happens
+then something very serious has happend. this should be handled centrally. also
+look for comments like "we don't want to stop for one failure"

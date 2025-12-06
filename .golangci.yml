@@ -9,25 +9,25 @@ run:
 
 linters:
   enable:
+    # - depguard  # Disabled due to v1.64.8 bug (#3862)
+    - cyclop
+    - errcheck
+    # - gofumpt  # Disabled due to version mismatch
+    - gocognit
+    - goconst
+    - gocyclo
+    - gocritic
+    - funlen
     - gofmt
     - goimports
+    - gosec
+    - gosimple
     - govet
     - ineffassign
     - misspell
-    - errcheck
     - staticcheck
-    # - gofumpt  # Disabled due to version mismatch
-    - gosec
-    - gosimple
-    - unused
     - unparam
-    - gocyclo
-    - gocritic
-    # - depguard  # Disabled due to v1.64.8 bug (#3862)
-    - goconst
-    - cyclop
-    - gocognit
-    - funlen
+    - unused
   disable:
     - depguard  # Explicitly disable to avoid GOROOT/$gostd init error
     - gofumpt

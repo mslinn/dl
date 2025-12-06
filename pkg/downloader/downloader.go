@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -189,10 +190,58 @@ func (d *Downloader) executeYtDlp(args []string) error {
 	}
 
 	cmd := exec.Command("yt-dlp", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	// Capture output for better error diagnostics
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err == nil {
+		// Show output in non-verbose mode if there were any messages
+		if !d.opts.Verbose && stdout.String() != "" {
+			fmt.Print(stdout.String())
+		}
+		return nil
+	}
+
+	return d.formatYtDlpError(err, args, stdout.String(), stderr.String())
+}
+
+func (d *Downloader) formatYtDlpError(err error, args []string, stdoutStr, stderrStr string) error {
+	var errorMsg strings.Builder
+	errorMsg.WriteString(fmt.Sprintf("yt-dlp execution failed: %v", err))
+	errorMsg.WriteString(fmt.Sprintf("\nCommand: yt-dlp %s", strings.Join(args, " ")))
+
+	if stdoutStr != "" {
+		errorMsg.WriteString(fmt.Sprintf("\nstdout: %s", strings.TrimSpace(stdoutStr)))
+	}
+	if stderrStr != "" {
+		errorMsg.WriteString(fmt.Sprintf("\nstderr: %s", strings.TrimSpace(stderrStr)))
+	}
+
+	// Provide common troubleshooting hints
+	hint := d.getYtDlpErrorHint(stderrStr)
+	if hint != "" {
+		errorMsg.WriteString(fmt.Sprintf("\nHint: %s", hint))
+	}
+
+	return fmt.Errorf("%s", errorMsg.String())
+}
+
+func (d *Downloader) getYtDlpErrorHint(stderrStr string) string {
+	switch {
+	case strings.Contains(stderrStr, "network") || strings.Contains(stderrStr, "timeout"):
+		return "Check your internet connection or try again later"
+	case strings.Contains(stderrStr, "permission") || strings.Contains(stderrStr, "Permission denied"):
+		return "Check file permissions in the destination directory"
+	case strings.Contains(stderrStr, "space") || strings.Contains(stderrStr, "disk"):
+		return "Check available disk space"
+	case strings.Contains(stderrStr, "format") || strings.Contains(stderrStr, "unsupported"):
+		return "The video format might not be supported or available"
+	default:
+		return ""
+	}
 }
 
 func (d *Downloader) determineOutputPath(outputPath string) string {
@@ -255,15 +304,36 @@ func CheckYtDlp() error {
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 
-	if err := installCmd.Run(); err != nil {
+	pip3Err := installCmd.Run()
+	var pip3Output string
+	if pip3Err != nil {
+		// Capture pip3 error output for better diagnostics
+		if exitErr, ok := pip3Err.(*exec.ExitError); ok {
+			pip3Output = string(exitErr.Stderr)
+		}
+	}
+
+	if pip3Err != nil {
 		// Try with pip if pip3 failed
-		color.Yellow("Trying with pip instead of pip3...")
+		color.Yellow("pip3 failed, trying with pip instead...")
+		color.Yellow("pip3 error: %v", pip3Err)
+		if pip3Output != "" {
+			color.Yellow("pip3 output: %s", pip3Output)
+		}
+
 		installCmd = exec.Command("pip", "install", "yt-dlp")
 		installCmd.Stdout = os.Stdout
 		installCmd.Stderr = os.Stderr
 
-		if err := installCmd.Run(); err != nil {
-			return fmt.Errorf("failed to install yt-dlp: %w\nPlease install manually: pip install yt-dlp or download from https://github.com/yt-dlp/yt-dlp", err)
+		var pipErr error
+		var pipOutput string
+		if pipErr = installCmd.Run(); pipErr != nil {
+			// Capture pip error output for better diagnostics
+			if exitErr, ok := pipErr.(*exec.ExitError); ok {
+				pipOutput = string(exitErr.Stderr)
+			}
+
+			return fmt.Errorf("failed to install yt-dlp with both pip3 and pip:\n  pip3 error: %v\n  pip3 output: %s\n  pip error: %v\n  pip output: %s\n\nPlease install manually:\n  pip install yt-dlp\nOr download from: https://github.com/yt-dlp/yt-dlp", pip3Err, pip3Output, pipErr, pipOutput)
 		}
 	}
 
@@ -272,7 +342,11 @@ func CheckYtDlp() error {
 	// Verify installation
 	verifyCmd := exec.Command("yt-dlp", "--version")
 	if err := verifyCmd.Run(); err != nil {
-		return fmt.Errorf("yt-dlp was installed but cannot be found in PATH. Try running the command again or restart your shell")
+		var verifyOutput string
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			verifyOutput = string(exitErr.Stderr)
+		}
+		return fmt.Errorf("yt-dlp was installed but cannot be found in PATH: %v\n  stderr: %s\nTry running the command again or restart your shell", err, verifyOutput)
 	}
 
 	return nil

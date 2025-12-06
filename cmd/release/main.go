@@ -93,7 +93,7 @@ func main() {
 	runGoReleaser(version, opts.debug)
 
 	fmt.Println()
-	success(fmt.Sprintf("Release v%s completed successfully!", version))
+	success(fmt.Sprintf("Release v%s completed!", version))
 	fmt.Println()
 
 	// Display release URL
@@ -116,19 +116,19 @@ func usage() {
 }
 
 func info(msg string) {
-	fmt.Printf("%sℹ%s  %s\n", colorBlue, colorReset, msg)
+	fmt.Printf("%sINFO:%s %s\n", colorBlue, colorReset, msg)
 }
 
 func success(msg string) {
-	fmt.Printf("%s✓%s  %s\n", colorGreen, colorReset, msg)
+	fmt.Printf("%sOK:%s %s\n", colorGreen, colorReset, msg)
 }
 
 func warning(msg string) {
-	fmt.Printf("%s⚠%s  %s\n", colorYellow, colorReset, msg)
+	fmt.Printf("%sWARNING:%s %s\n", colorYellow, colorReset, msg)
 }
 
 func errorMsg(msg string) {
-	fmt.Printf("%s✗%s  %s\n", colorRed, colorReset, msg)
+	fmt.Printf("%sERROR:%s %s\n", colorRed, colorReset, msg)
 }
 
 func errorExit(msg string) {

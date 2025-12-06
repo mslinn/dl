@@ -36,7 +36,16 @@ func Run(cmd string, verbose bool) error {
 	}
 
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("command failed: %w", err)
+		// Capture output for better error diagnostics
+		var stderrStr string
+		if stderrBuffer, ok := command.Stderr.(*bytes.Buffer); ok {
+			stderrStr = stderrBuffer.String()
+		}
+
+		if stderrStr != "" {
+			return fmt.Errorf("command '%s' failed: %w\nstderr: %s", cmd, err, stderrStr)
+		}
+		return fmt.Errorf("command '%s' failed: %w", cmd, err)
 	}
 
 	return nil
@@ -47,7 +56,7 @@ func RunWithOutput(cmd string) (string, error) {
 	command := exec.Command("sh", "-c", cmd)
 	output, err := command.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("command failed: %w", err)
+		return "", fmt.Errorf("command '%s' failed: %w\noutput: %s", cmd, err, strings.TrimSpace(string(output)))
 	}
 	return strings.TrimSpace(string(output)), nil
 }
@@ -65,15 +74,20 @@ func SambaMount(remoteNode, remoteDrive string, verbose bool) (string, error) {
 	if _, err := os.Stat(mountPoint); os.IsNotExist(err) {
 		cmd := fmt.Sprintf("sudo mkdir -p %s", mountPoint)
 		if err := Run(cmd, verbose); err != nil {
-			return "", fmt.Errorf("failed to create mount point: %w", err)
+			return "", fmt.Errorf("failed to create mount point '%s': %w", mountPoint, err)
 		}
 	}
 
 	// Check if already mounted
-	if !IsMountPoint(mountPoint) {
+	isMount, err := IsMountPoint(mountPoint)
+	if err != nil {
+		return "", fmt.Errorf("failed to check if '%s' is a mount point: %w", mountPoint, err)
+	}
+
+	if !isMount {
 		cmd := fmt.Sprintf("sudo mount -t drvfs '\\\\%s\\%s' %s", remoteNode, remoteDrive, mountPoint)
 		if err := Run(cmd, verbose); err != nil {
-			return "", fmt.Errorf("failed to mount: %w", err)
+			return "", fmt.Errorf("failed to mount '%s' to '%s': %w", remoteDrive, mountPoint, err)
 		}
 	}
 
@@ -82,7 +96,7 @@ func SambaMount(remoteNode, remoteDrive string, verbose bool) (string, error) {
 
 // SambaParse parses Windows-style paths (e.g., "c:/path/to/file")
 // Returns the drive letter and the path
-func SambaParse(winPath string) (string, string, error) {
+func SambaParse(winPath string) (drive, path string, err error) {
 	// Check for multiple colons (invalid Windows path)
 	if strings.Count(winPath, ":") != 1 {
 		return "", "", fmt.Errorf("invalid Windows path '%s': must contain exactly one colon", winPath)
@@ -123,19 +137,35 @@ func WinHome() (string, error) {
 func CopyFile(src, dst string) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open source file: %w", err)
+		return fmt.Errorf("failed to open source file '%s': %w", src, err)
 	}
 	defer sourceFile.Close()
 
+	// Create destination with exclusive access to avoid partial writes
 	destFile, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("failed to create destination file: %w", err)
-	}
-	defer destFile.Close()
-
-	if _, err := io.Copy(destFile, sourceFile); err != nil {
-		return fmt.Errorf("failed to copy file: %w", err)
+		return fmt.Errorf("failed to create destination file '%s': %w", dst, err)
 	}
 
-	return destFile.Sync()
+	// Copy the file content
+	bytesCopied, err := io.Copy(destFile, sourceFile)
+	if err != nil {
+		// Clean up incomplete destination file
+		os.Remove(dst)
+		return fmt.Errorf("failed to copy file from '%s' to '%s' (copied %d bytes): %w", src, dst, bytesCopied, err)
+	}
+
+	// Ensure data is written to disk
+	if err := destFile.Sync(); err != nil {
+		// Clean up incomplete destination file
+		os.Remove(dst)
+		return fmt.Errorf("failed to sync file '%s' to disk: %w", dst, err)
+	}
+
+	// Close destination file
+	if err := destFile.Close(); err != nil {
+		return fmt.Errorf("failed to close destination file '%s': %w", dst, err)
+	}
+
+	return nil
 }
