@@ -1,4 +1,4 @@
-.PHONY: build test clean install run help lint deps-check setup
+.PHONY: build test clean install run help
 
 # Variables
 BINARY_NAME := dl
@@ -52,12 +52,7 @@ test: ## Run all tests
 
 test-coverage: ## Run tests with coverage
 	@echo "Running tests with coverage..."
-	go test ./... -coverprofile=coverage.out -v
-	@echo "Generating coverage report..."
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
-	@echo "Coverage summary:"
-	go tool cover -func=coverage.out
+	go test -cover ./...
 
 test-race: ## Run tests with race detector
 	@echo "Running tests with race detector..."
@@ -101,24 +96,8 @@ deps: ## Download dependencies
 	go mod tidy
 	@echo "Dependencies updated"
 
-check: fmt vet lint test ## Run all checks (fmt, vet, lint, test)
-	@echo "All checks passed!"
+check: fmt vet test ## Run all checks (fmt, vet, test)
+	@echo "All checks passed"
 
 version: ## Show the current version
 	@echo "Version: $(VERSION)"
-
-# Development tools (added from sc_router patterns)
-deps-check: ## Check dependencies and show version information
-	@echo "Checking dependencies..."
-	@echo "Go version:"
-	go version
-	@echo ""
-	@echo "Required tools:"
-	@echo "  - golangci-lint (preferred): go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
-	@echo "  - golint (fallback): go install golang.org/x/lint/golint@latest"
-
-setup: ## Setup development environment
-	@echo "Setting up development environment..."
-	go mod download
-	go mod tidy
-	@echo "Development environment ready"

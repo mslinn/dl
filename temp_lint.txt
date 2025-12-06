@@ -1,0 +1,26 @@
+lint: ## Run linting tools
+	@echo "Running linting..."
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	elif command -v golint >/dev/null 2>&1; then \
+		golint ./...; \
+	else \
+		echo "No linting tools found. Install golangci-lint with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
+		echo "Or golint with: go install golang.org/x/lint/golint@latest"; \
+	fi
+
+deps-check: ## Check dependencies and show version information
+	@echo "Checking dependencies..."
+	@echo "Go version:"
+	go version
+	@echo ""
+	@echo "Required tools:"
+	@echo "  - golangci-lint (preferred): go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+	@echo "  - golint (fallback): go install golang.org/x/lint/golint@latest"
+
+setup: ## Setup development environment
+	@echo "Setting up development environment..."
+	go mod download
+	go mod tidy
+	@echo "Development environment ready"
+
