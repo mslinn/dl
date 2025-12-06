@@ -59,32 +59,7 @@ func (c *Copier) CopyToRemotes(localPath string, purpose Purpose) error {
 		wg.Add(1)
 		go func(name string, r *config.Remote) {
 			defer wg.Done()
-			if err := c.copyToRemote(localPath, name, r, purpose); err != nil {
-				// Provide specific error diagnosis for common issues
-				var diagnosticMsg string
-				switch {
-				case strings.Contains(err.Error(), "permission denied") || strings.Contains(err.Error(), "Permission denied"):
-					diagnosticMsg = " - Check SSH keys or Samba permissions"
-				case strings.Contains(err.Error(), "No such file or directory") || strings.Contains(err.Error(), "No route to host"):
-					diagnosticMsg = " - Check network connectivity and remote host availability"
-				case strings.Contains(err.Error(), "Connection refused") || strings.Contains(err.Error(), "Connection timed out"):
-					diagnosticMsg = " - Check if SSH service is running on remote host"
-				case strings.Contains(err.Error(), "failed to mount"):
-					diagnosticMsg = " - Check if Samba share is accessible and WSL is configured properly"
-				case strings.Contains(err.Error(), "command failed"):
-					diagnosticMsg = " - Check if required tools (scp/mount) are installed"
-				}
-
-				fmt.Printf("WARNING: Failed to copy to remote '%s': %s%s\n", name, err.Error(), diagnosticMsg)
-				mu.Lock()
-				errors = append(errors, err)
-				mu.Unlock()
-			} else {
-				fmt.Printf("SUCCESS: Successfully copied to remote '%s'\n", name)
-				mu.Lock()
-				successCount++
-				mu.Unlock()
-			}
+			c.processRemoteCopy(localPath, name, r, purpose, &mu, &errors, &successCount)
 		}(remoteName, remote)
 	}
 
@@ -100,6 +75,44 @@ func (c *Copier) CopyToRemotes(localPath string, purpose Purpose) error {
 	}
 
 	return nil
+}
+
+// processRemoteCopy handles the copy operation for a single remote destination
+func (c *Copier) processRemoteCopy(localPath, remoteName string, remote *config.Remote, purpose Purpose, mu *sync.Mutex, errors *[]error, successCount *int) {
+	if err := c.copyToRemote(localPath, remoteName, remote, purpose); err != nil {
+		diagnosticMsg := c.getErrorDiagnostic(err)
+		fmt.Printf("WARNING: Failed to copy to remote '%s': %s%s\n", remoteName, err.Error(), diagnosticMsg)
+
+		mu.Lock()
+		*errors = append(*errors, err)
+		mu.Unlock()
+	} else {
+		fmt.Printf("SUCCESS: Successfully copied to remote '%s'\n", remoteName)
+
+		mu.Lock()
+		*successCount++
+		mu.Unlock()
+	}
+}
+
+// getErrorDiagnostic provides specific error diagnosis for common issues
+func (c *Copier) getErrorDiagnostic(err error) string {
+	errMsg := err.Error()
+
+	switch {
+	case strings.Contains(errMsg, "permission denied") || strings.Contains(errMsg, "Permission denied"):
+		return " - Check SSH keys or Samba permissions"
+	case strings.Contains(errMsg, "No such file or directory") || strings.Contains(errMsg, "No route to host"):
+		return " - Check network connectivity and remote host availability"
+	case strings.Contains(errMsg, "Connection refused") || strings.Contains(errMsg, "Connection timed out"):
+		return " - Check if SSH service is running on remote host"
+	case strings.Contains(errMsg, "failed to mount"):
+		return " - Check if Samba share is accessible and WSL is configured properly"
+	case strings.Contains(errMsg, "command failed"):
+		return " - Check if required tools (scp/mount) are installed"
+	default:
+		return ""
+	}
 }
 
 // copyToRemote copies a file to a single remote destination
