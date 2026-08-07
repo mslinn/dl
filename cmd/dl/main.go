@@ -10,6 +10,8 @@ import (
 	"dl/pkg/downloader"
 	"dl/pkg/remote"
 
+	"github.com/lithammer/dedent"
+
 	flag "github.com/spf13/pflag"
 )
 
@@ -105,16 +107,6 @@ func determineMP3Destination(cfg *config.Config) (destination string, purpose re
 	return destination, purpose, mediaType, format, err
 }
 
-func printDownloadInfo(url, format, destination string, cfg *config.Config) {
-	fmt.Printf("Downloading from: %s\n", url)
-	fmt.Printf("Media type: %s\n", format)
-	fmt.Printf("Destination: %s\n", destination)
-	if len(cfg.ActiveRemotes) > 0 {
-		fmt.Printf("Active remotes: %s\n", strings.Join(cfg.GetActiveRemoteNames(), ", "))
-	}
-	fmt.Println()
-}
-
 func downloadMedia(args *Args, destination string, mediaType downloader.MediaType, format string) (string, error) {
 	opts := &downloader.Options{
 		URL:         args.url,
@@ -149,35 +141,33 @@ func parseArgs() *Args {
 	flag.BoolVarP(&args.xrated, "xrated", "x", false, "Download x-rated video to xdest")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "dl - Download videos and audio from various websites\n\n")
-		fmt.Fprintf(os.Stderr, "Version: %s\n", Version)
-		if Commit != "unknown" {
-			fmt.Fprintf(os.Stderr, "Commit: %s\n", Commit)
-		}
-		if BuildDate != "unknown" {
-			fmt.Fprintf(os.Stderr, "Build date: %s\n", BuildDate)
-		}
-		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] URL\n\n", filepath.Base(os.Args[0]))
-		fmt.Fprintf(os.Stderr, "Downloads media from URLs using yt-dlp.\n")
-		fmt.Fprintf(os.Stderr, "By default, downloads audio as MP3, unless -k, -x, or -V options are provided.\n\n")
-		fmt.Fprintf(os.Stderr, "Options:\n")
-		fmt.Fprintf(os.Stderr, "  -c, --config string       Path to configuration file (default \"~/dl.config\")\n")
-		fmt.Fprintf(os.Stderr, "  -d, --debug               Enable debug mode (alias for verbose)\n")
-		fmt.Fprintf(os.Stderr, "  -h, --help                Display this help message\n")
-		fmt.Fprintf(os.Stderr, "  -k, --keep-video          Download and keep video\n")
-		fmt.Fprintf(os.Stderr, "  -v, --verbose             Enable verbose output\n")
-		fmt.Fprintf(os.Stderr, "  -V, --video-dest string   Download video to specified directory\n")
-		fmt.Fprintf(os.Stderr, "  -x, --xrated              Download x-rated video to xdest\n")
-		fmt.Fprintf(os.Stderr, "\nConfiguration:\n")
-		fmt.Fprintf(os.Stderr, "  Edit ~/dl.config to configure local and remote destinations.\n")
-		fmt.Fprintf(os.Stderr, "  See README-GO.md for configuration details.\n\n")
-		fmt.Fprintf(os.Stderr, "Examples:\n")
-		fmt.Fprintf(os.Stderr, "  dl https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
-		fmt.Fprintf(os.Stderr, "  dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
-		fmt.Fprintf(os.Stderr, "  dl -k https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
-		fmt.Fprintf(os.Stderr, "  dl -V ~/Videos https://www.youtube.com/watch?v=dQw4w9WgXcQ\n")
-		fmt.Fprintf(os.Stderr, "  dl -vV . https://www.youtube.com/watch?v=dQw4w9WgXcQ  # Combined flags\n")
+		fmt.Fprintf(os.Stderr, "dl v%s - Download videos and audio from various websites\n", Version)
+		fmt.Fprintf(os.Stderr, dedent.Dedent(`
+			Usage: %s [options] URL
+
+			Downloads media from URLs using yt-dlp.
+			By default, downloads audio as MP3, unless -k, -x, or -V options are provided.
+
+			Options:
+			-c, --config string Path to configuration file (default "~/dl.config")
+			-d, --debug Enable debug mode (alias for verbose)
+			-h, --help Display this help message
+			-k, --keep-video Download and keep video
+			-v, --verbose Enable verbose output
+			-V, --video-dest string Download video to specified directory
+			-x, --xrated Download x-rated video to xdest
+
+			Configuration:
+			Edit ~/dl.config to configure local and remote destinations.
+			See README-GO.md for configuration details.
+
+			Examples:
+			dl https://www.youtube.com/watch?v=dQw4w9WgXcQ
+			dl -v https://www.youtube.com/watch?v=dQw4w9WgXcQ
+			dl -k https://www.youtube.com/watch?v=dQw4w9WgXcQ
+			dl -V ~/Videos https://www.youtube.com/watch?v=dQw4w9WgXcQ
+			dl -vV . https://www.youtube.com/watch?v=dQw4w9WgXcQ # Combined flags
+		`), filepath.Base(os.Args[0]))
 	}
 
 	flag.Parse()
@@ -196,4 +186,14 @@ func parseArgs() *Args {
 	}
 
 	return args
+}
+
+func printDownloadInfo(url, format, destination string, cfg *config.Config) {
+	fmt.Printf("Downloading from: %s\n", url)
+	fmt.Printf("Media type: %s\n", format)
+	fmt.Printf("Destination: %s\n", destination)
+	if len(cfg.ActiveRemotes) > 0 {
+		fmt.Printf("Active remotes: %s\n", strings.Join(cfg.GetActiveRemoteNames(), ", "))
+	}
+	fmt.Println()
 }

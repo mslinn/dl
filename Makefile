@@ -22,17 +22,20 @@ else
   INSTALL_DIR := $(GOBIN)
 endif
 
-help: ## Show this help message
-	@echo 'Usage: make [target]'
-	@echo ''
-	@echo 'Available targets:'
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
-
 build: ## Build the binary
 	@echo "Building $(BINARY_NAME) version $(VERSION)..."
 	@mkdir -p $(BIN_DIR)
 	go build $(LDFLAGS) -o $(BIN_DIR)/$(BINARY_NAME) ./cmd/dl
 	@echo "Build complete: $(BIN_DIR)/$(BINARY_NAME)"
+
+build-all: ## Build for all platforms
+	@echo "Building for all platforms..."
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-amd64 ./cmd/dl
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-arm64 ./cmd/dl
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-amd64 ./cmd/dl
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-arm64 ./cmd/dl
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-windows-amd64.exe ./cmd/dl
+	@echo "Build complete for all platforms"
 
 build-release-tool: ## Build the release tool (developers only)
 	@echo "Building release tool (for developers)..."
@@ -40,11 +43,61 @@ build-release-tool: ## Build the release tool (developers only)
 	@echo "Build complete: ./release"
 	@echo "Note: This is a development tool and is not installed with 'go install'"
 
+check: fmt vet lint test ## Run all checks (fmt, vet, lint, test)
+	@echo "All checks passed!"
+
+clean: ## Remove built binaries
+	@echo "Cleaning..."
+	rm -f $(BINARY_NAME)
+	rm -f dl-*
+	rm -f release
+	@echo "Clean complete"
+
+deps: ## Download dependencies
+	@echo "Downloading dependencies..."
+	go mod download
+	go mod tidy
+	@echo "Dependencies updated"
+
+# Development tools (added from sc_router patterns)
+deps-check: ## Check dependencies and show version information
+	@echo "Checking dependencies..."
+	@echo "Go version:"
+	go version
+	@echo ""
+	@echo "Required tools:"
+	@echo "  - golangci-lint (preferred): go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+	@echo "  - golint (fallback): go install golang.org/x/lint/golint@latest"
+
+fmt: ## Format Go code
+	@echo "Formatting code..."
+	go fmt ./...
+
+help: ## Show this help message
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Available targets:'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+
 install: build ## Install binary using Go's standard installation method
 	@echo "Installing $(BINARY_NAME) to $(INSTALL_DIR)..."
 	@$(GOINSTALL) $(LDFLAGS) ./cmd/dl
 	@echo "Installation complete. Binary location: $(INSTALL_DIR)/$(BINARY_NAME)"
 	@echo "$$PATH" | grep -q "$(INSTALL_DIR)" || echo "Warning: $(INSTALL_DIR) is not in your PATH."
+
+lint: ## Run golint (requires golint to be installed)
+	@echo "Running golint..."
+	golint ./...
+
+run: build ## Build and run with example URL
+	@echo "Running $(BINARY_NAME)..."
+	bin/$(BINARY_NAME) -h
+
+setup: ## Setup development environment
+	@echo "Setting up development environment..."
+	go mod download
+	go mod tidy
+	@echo "Development environment ready"
 
 test: ## Run all tests
 	@echo "Running tests..."
@@ -63,62 +116,9 @@ test-race: ## Run tests with race detector
 	@echo "Running tests with race detector..."
 	go test -race ./...
 
-clean: ## Remove built binaries
-	@echo "Cleaning..."
-	rm -f $(BINARY_NAME)
-	rm -f dl-*
-	rm -f release
-	@echo "Clean complete"
-
-run: build ## Build and run with example URL
-	@echo "Running $(BINARY_NAME)..."
-	./$(BINARY_NAME) -h
-
-fmt: ## Format Go code
-	@echo "Formatting code..."
-	go fmt ./...
+version: ## Show the current version
+	@echo "Version: $(VERSION)"
 
 vet: ## Run go vet
 	@echo "Running go vet..."
 	go vet ./...
-
-lint: ## Run golint (requires golint to be installed)
-	@echo "Running golint..."
-	golint ./...
-
-build-all: ## Build for all platforms
-	@echo "Building for all platforms..."
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-amd64 ./cmd/dl
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-arm64 ./cmd/dl
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-amd64 ./cmd/dl
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-arm64 ./cmd/dl
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-windows-amd64.exe ./cmd/dl
-	@echo "Build complete for all platforms"
-
-deps: ## Download dependencies
-	@echo "Downloading dependencies..."
-	go mod download
-	go mod tidy
-	@echo "Dependencies updated"
-
-check: fmt vet lint test ## Run all checks (fmt, vet, lint, test)
-	@echo "All checks passed!"
-
-version: ## Show the current version
-	@echo "Version: $(VERSION)"
-
-# Development tools (added from sc_router patterns)
-deps-check: ## Check dependencies and show version information
-	@echo "Checking dependencies..."
-	@echo "Go version:"
-	go version
-	@echo ""
-	@echo "Required tools:"
-	@echo "  - golangci-lint (preferred): go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
-	@echo "  - golint (fallback): go install golang.org/x/lint/golint@latest"
-
-setup: ## Setup development environment
-	@echo "Setting up development environment..."
-	go mod download
-	go mod tidy
-	@echo "Development environment ready"
